@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class GameCharaConttroller : MonoBehaviour
@@ -20,6 +21,11 @@ public class GameCharaConttroller : MonoBehaviour
     public bool IsGrounded = false;
     public bool HasJumpInertia = false;
     public Vector3 JumpInertia;
+
+    public float SpeedBuffMaxSpeed = 0;
+    public List<SkillBase> Skills = new List<SkillBase>();
+    public bool HasSpeedRunSKill => Skills.Any(x => x.SkillType == SkillType.SpeedRun);
+    public int RaycastMask;
     void Awake()
     {
         _rigidbody = GetComponent<Rigidbody>();
@@ -28,6 +34,7 @@ public class GameCharaConttroller : MonoBehaviour
 
         // カーソルを画面中央に固定し、カーソルの表示を無効化
         Cursor.lockState = CursorLockMode.Locked;
+        RaycastMask = 1 << LayerMask.NameToLayer("FieldIcon");
     }
     // Update is called once per frame
     void Update()
@@ -54,10 +61,41 @@ public class GameCharaConttroller : MonoBehaviour
         {
             if (Input.GetButtonDown("Jump"))
             {
-                _rigidbody.AddForce(Vector3.up * JumpForce, ForceMode.Impulse);
-                JumpInertia = _rigidbody.velocity;
+                Jump();
+            }
+
+            if (AutoJump)
+            {
+                if (JumpTimeLeft > 0)
+                {
+                    JumpTimeLeft -= Time.deltaTime;
+
+                    if (JumpTimeLeft <= 0)
+                    {
+                        JumpTimeLeft = 2;
+                        Jump();
+                    }
+                }
             }
         }
+
+        foreach (var skill in Skills)
+        {
+            skill.OnSkillpdate();
+        }
+
+        var finshedList = Skills.Where(x => x.IsFinished).ToList();
+        foreach (var skill in finshedList)
+        {
+            skill.OnSkillFinished();
+        }
+    }
+    public float JumpTimeLeft = 3;
+    public bool AutoJump = false;
+    private void Jump()
+    {
+        _rigidbody.AddForce(Vector3.up * JumpForce, ForceMode.Impulse);
+        JumpInertia = _rigidbody.velocity;
     }
 
     void FixedUpdate()
@@ -123,8 +161,8 @@ public class GameCharaConttroller : MonoBehaviour
             InputMoveSpeed.y = 0;
 
             var strenght = InputMoveSpeed.x * InputMoveSpeed.x + InputMoveSpeed.z * InputMoveSpeed.z;
-
-            var limitScale = strenght / (MaxHorizontalMoveSpeed * MaxHorizontalMoveSpeed);
+            var maxHorizontalMoveSpeed = HasSpeedRunSKill ? SpeedBuffMaxSpeed : MaxHorizontalMoveSpeed;
+            var limitScale = strenght / (maxHorizontalMoveSpeed * maxHorizontalMoveSpeed);
 
             if (limitScale > 1)
             {
@@ -201,5 +239,53 @@ public class GameCharaConttroller : MonoBehaviour
         }
         // var isFootRayGrounded = Physics.CapsuleCast(transform.position, Vector3.down, _distToGround + 0.1f);
         return IsGrounded;
+    }
+    public void OnTriggerEnter(Collider collider)
+    {
+        if (collider.gameObject.tag == "DangerApplyIcon")
+        {
+            var FieldAppIcon = collider.gameObject.GetComponent<FieldAppIcon>();
+            var settingData = FieldAppIcon.SkillSettingData;
+
+            var skill = SkillCreator.CreateSkill(settingData);
+            skill.Initialize(settingData, this, collider.transform);
+
+            AddSkillPool(skill);
+            Destroy(collider.gameObject);
+        }
+    }
+
+    public bool AddSkillPool(SkillBase skillBase)
+    {
+        if (Skills.Any(x => x.SkillType == skillBase.SkillType
+            && !x.CanStack))
+        {
+            return false;
+        }
+        Skills.Add(skillBase);
+
+        if (skillBase.IsAutoFire)
+        {
+            FireSkill(skillBase.SkillType);
+        }
+
+        return true;
+    }
+    public void FireSkill(SkillType skillType)
+    {
+        var skill = Skills.FirstOrDefault(x => x.SkillType == skillType);
+
+        if (skill != null)
+        {
+            skill.OnSkillFire();
+            if (skill.TimeType == SkillTimeType.OneShot && skill.IsFinished)
+            {
+                skill.OnSkillFinished();
+            }
+        }
+    }
+    public void OnRemoveSkill(SkillBase skill)
+    {
+        Skills.Remove(skill);
     }
 }

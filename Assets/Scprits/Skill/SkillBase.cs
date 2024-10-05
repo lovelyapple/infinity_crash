@@ -22,38 +22,103 @@ public enum EffectType
 public class SkillSettingData
 {
     public SkillType Type;
+    public bool IsAutoFire;
     public SkillTimeType TimeType;
     public float Duration;
     public EffectType EffectType;
-    public ParticleSystem EffectPrefab;
+    public ParticleSystem FieldEffectPrefab;
+    public string ScreenEffectName;
+    public bool CanStack;
 }
-public class ISkillBase
+[Serializable]
+public class SkillBase
 {
-    public SkillType Type { get; }
+    public SkillType SkillType => _settingData.Type;
+    public bool CanStack => _settingData.CanStack;
+    public bool IsAutoFire => _settingData.IsAutoFire;
+    public SkillTimeType TimeType => _settingData.TimeType;
     public ParticleSystem Effect { get; set; }
     public float TimeLeft { get; set; }
-    public void Initialize(SkillSettingData settingData, Transform fieldObjTransform)
+    public SkillSettingData _settingData;
+    private bool _isRuning = false;
+    public bool IsFinished = false;
+    private GameCharaConttroller _player;
+    private Transform _fieldTransform;
+    public void Initialize(SkillSettingData settingData, GameCharaConttroller player, Transform fieldObjTransform)
     {
-        if (settingData.EffectPrefab != null)
+        _settingData = settingData;
+        _player = player;
+        TimeLeft = _settingData.Duration;
+        _fieldTransform = fieldObjTransform;
+    }
+    public virtual void OnSkillFire()
+    {
+        if (_settingData.TimeType == SkillTimeType.ElapseTime)
         {
-            Effect = GameObject.Instantiate(settingData.EffectPrefab);
+            _isRuning = true;
+        }
+        else
+        {
+            IsFinished = true;
+        }
 
-            if (settingData.EffectType == EffectType.Field)
-            {
-                Effect.gameObject.transform.SetParent(fieldObjTransform, false);
-            }
-            else
-            {
+        if (_settingData.FieldEffectPrefab != null)
+        {
+            Effect = GameObject.Instantiate(_settingData.FieldEffectPrefab);
 
+            if (_settingData.EffectType == EffectType.Field)
+            {
+                Effect.gameObject.transform.SetParent(_fieldTransform, false);
+                Effect.gameObject.transform.localScale = Vector3.one;
+                Effect.gameObject.transform.localPosition = Vector3.zero;
             }
         }
+        else if (!string.IsNullOrEmpty(_settingData.ScreenEffectName))
+        {
+            ResourceManager.Instance.TurnOnEffect(_settingData.ScreenEffectName);
+        }
     }
-    public void OnUpdate()
+    public virtual void OnSkillpdate()
     {
+        if (!_isRuning)
+        {
+            return;
+        }
 
+        TimeLeft -= Time.deltaTime;
+
+        if (TimeLeft <= 0)
+        {
+            _isRuning = false;
+            IsFinished = true;
+        }
     }
-    public void Finished()
+    public virtual void OnSkillFinished()
     {
+        if (Effect)
+        {
+            GameObject.Destroy(Effect);
+        }
 
+        if (!string.IsNullOrEmpty(_settingData.ScreenEffectName))
+        {
+            ResourceManager.Instance.TurneOffEffect(_settingData.ScreenEffectName);
+        }
+
+        _player.OnRemoveSkill(this);
+        _settingData = null;
+    }
+}
+public static class SkillCreator
+{
+    public static SkillBase CreateSkill(SkillSettingData skillSettingData)
+    {
+        switch (skillSettingData.Type)
+        {
+            case SkillType.SpeedRun:
+                return new SkillSpeedRun();
+            default:
+                return null;
+        }
     }
 }
