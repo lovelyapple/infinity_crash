@@ -194,7 +194,7 @@ public class GameCharaConttroller : MonoBehaviour
         // 指定した方向にCapsuleCastを実行
         IsGrounded = Physics.CapsuleCast(start, end, radius, Vector3.down, out RaycastHit hit, 0.2f) && hit.point.y < transform.position.y;
 
-        if(IsGrounded)
+        if (IsGrounded)
         {
             JumpInertia = Vector3.zero;
             HasJumpInertia = false;
