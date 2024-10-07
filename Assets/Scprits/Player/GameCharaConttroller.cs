@@ -1,21 +1,21 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class GameCharaConttroller : MonoBehaviour
 {
     public Transform CameraTransform;
     Rigidbody _rigidbody;
-    CapsuleCollider _collider;
+    SphereCollider _collider;
     float _distToGround;
     public float JumpForce = 5f;
     public float mouseSensitivity = 100f;  // マウス感度
     private float xRotation = 0f;
 
     public Vector3 InputMoveSpeed;
-    public float InputAcceleration = 1f;
-    public float MaxHorizontalMoveSpeed = 3f;
+    public float InputForce = 1f;
     public bool IsInputing;
 
     public bool IsGrounded = false;
@@ -29,7 +29,7 @@ public class GameCharaConttroller : MonoBehaviour
     void Awake()
     {
         _rigidbody = GetComponent<Rigidbody>();
-        _collider = GetComponent<CapsuleCollider>();
+        _collider = GetComponent<SphereCollider>();
         _distToGround = _collider.bounds.extents.y;
 
         // カーソルを画面中央に固定し、カーソルの表示を無効化
@@ -94,7 +94,7 @@ public class GameCharaConttroller : MonoBehaviour
     public bool AutoJump = false;
     private void Jump()
     {
-        _rigidbody.AddForce(Vector3.up * JumpForce, ForceMode.Impulse);
+        _rigidbody.velocity = new Vector3(_rigidbody.velocity.x, _rigidbody.velocity.y + JumpForce, _rigidbody.velocity.z);
         JumpInertia = _rigidbody.velocity;
     }
 
@@ -103,27 +103,12 @@ public class GameCharaConttroller : MonoBehaviour
         IsInputing = false;
         if (Input.GetKey(KeyCode.W))
         {
-            if (!Input.GetKey(KeyCode.S) && InputMoveSpeed.z < 0)
-            {
-                InputMoveSpeed.z = 0;
-            }
-
-            InputMoveSpeed.z += InputAcceleration * Time.deltaTime;
+            InputMoveSpeed.z = InputForce * Time.deltaTime;
             IsInputing = true;
         }
         else if (Input.GetKey(KeyCode.S))
         {
-            if (!Input.GetKey(KeyCode.W) && InputMoveSpeed.z > 0)
-            {
-                InputMoveSpeed.z = 0;
-            }
-
-            if (InputMoveSpeed.z > 0)
-            {
-                InputMoveSpeed.z = 0;
-            }
-
-            InputMoveSpeed.z -= InputAcceleration * Time.deltaTime;
+            InputMoveSpeed.z = -InputForce * Time.deltaTime;
             IsInputing = true;
         }
         else
@@ -133,22 +118,13 @@ public class GameCharaConttroller : MonoBehaviour
 
         if (Input.GetKey(KeyCode.A))
         {
-            if (!Input.GetKey(KeyCode.D) && InputMoveSpeed.x > 0)
-            {
-                InputMoveSpeed.x = 0;
-            }
-
-            InputMoveSpeed.x -= InputAcceleration * Time.deltaTime;
+            InputMoveSpeed.x = -InputForce * Time.deltaTime;
             IsInputing = true;
         }
         else if (Input.GetKey(KeyCode.D))
         {
-            if (!Input.GetKey(KeyCode.A) && InputMoveSpeed.x < 0)
-            {
-                InputMoveSpeed.x = 0;
-            }
 
-            InputMoveSpeed.x += InputAcceleration * Time.deltaTime;
+            InputMoveSpeed.x = InputForce * Time.deltaTime;
             IsInputing = true;
         }
         else
@@ -159,85 +135,61 @@ public class GameCharaConttroller : MonoBehaviour
         if (IsInputing)
         {
             InputMoveSpeed.y = 0;
-
-            var strenght = InputMoveSpeed.x * InputMoveSpeed.x + InputMoveSpeed.z * InputMoveSpeed.z;
-            var maxHorizontalMoveSpeed = HasSpeedRunSKill ? SpeedBuffMaxSpeed : MaxHorizontalMoveSpeed;
-            var limitScale = strenght / (maxHorizontalMoveSpeed * maxHorizontalMoveSpeed);
-
-            if (limitScale > 1)
-            {
-                InputMoveSpeed.x = InputMoveSpeed.x / limitScale;
-                InputMoveSpeed.z = InputMoveSpeed.z / limitScale;
-            }
         }
         else
         {
             InputMoveSpeed = Vector3.zero;
         }
 
+        RaycastHit hit;
+        // オブジェクトの真下にRaycastを撃って地面の法線を取得
+        if (Physics.Raycast(transform.position, Vector3.down, out hit, 0.52f))
+        {
+            Vector3 groundNormal = hit.normal;
+            // 法線ベクトルと上向きベクトルの角度を計算
+            float slopeAngle = Vector3.Angle(groundNormal, Vector3.up);
+
+            // 傾斜角が設定した最大角度を超えた場合のみ滑るようにする
+            if (slopeAngle > maxSlopeAngle)
+            {
+                _rigidbody.useGravity = true;
+            }
+            else if(_rigidbody.velocity.y < 0)
+            {
+                _rigidbody.velocity = new Vector3(_rigidbody.velocity.x, 0, _rigidbody.velocity.z); // 滑らないように速度をゼロにする
+                _rigidbody.useGravity = false; // 重力をオフにする
+            }
+        }else
+        {
+            _rigidbody.useGravity = true;
+        }
+
         if (InputMoveSpeed.x != 0 || InputMoveSpeed.z != 0)
         {
-            var curInputSpeed = InputMoveSpeed;
-            if (!IsGrounded)
-            {
-                curInputSpeed.x = curInputSpeed.x * 0.5f;
-                curInputSpeed.z = curInputSpeed.z * 0.5f;
-            }
-
-            worldDirection = transform.TransformDirection(curInputSpeed);
-
-            if (!IsGrounded)
-            {
-                Vector3 start = transform.position + Vector3.up * (_collider.height / 2 - _collider.radius); // 上部
-                Vector3 end = transform.position - Vector3.up * (_collider.height / 2 - _collider.radius); // 下部
-                float radius = _collider.radius - 0.1f;
-                if (Physics.CapsuleCast(start, end, radius, worldDirection, out var hit, 0.2f))
-                {
-                    // 法線ベクトルを取得して、それに基づいて進行方向を調整
-                    Vector3 reflectDirection = Vector3.Reflect(worldDirection, hit.normal);
-                    worldDirection = new Vector3(reflectDirection.x, _rigidbody.velocity.y, reflectDirection.z);
-                }
-            }
-
-            if (HasJumpInertia)
-            {
-                _rigidbody.velocity = JumpInertia + new Vector3(worldDirection.x, _rigidbody.velocity.y, worldDirection.z);
-            }
-            else
-            {
-                _rigidbody.velocity = new Vector3(worldDirection.x, _rigidbody.velocity.y, worldDirection.z);
-            }
+            velocity = _rigidbody.velocity;
+            var inputCache = InputMoveSpeed;
+            inputCache.y = 0;
+            _rigidbody.AddRelativeForce(inputCache, ForceMode.Force);
+            speed = Mathf.Sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
         }
-        else
-        {
-            if (!IsGrounded && HasJumpInertia)
-            {
-                var prev = _rigidbody.velocity;
-                _rigidbody.velocity = JumpInertia;
-                JumpInertia = prev;
-            }
-        }
-
-        _rigidbodyvelocity = _rigidbody.velocity;
     }
-    public Vector3 _rigidbodyvelocity;
-    public Vector3 worldDirection;
+    public Vector3 velocity;
+    public float speed;
+    public float maxSlopeAngle = 30;
 
     bool CheckIsGrounded()
     {
-        Vector3 start = transform.position + Vector3.up * (_collider.height / 2 - _collider.radius); // 上部
-        Vector3 end = transform.position - Vector3.up * (_collider.height / 2 - _collider.radius); // 下部
         float radius = _collider.radius - 0.1f;
 
         // 指定した方向にCapsuleCastを実行
-        IsGrounded = Physics.CapsuleCast(start, end, radius, Vector3.down, out RaycastHit hit, 0.2f) && hit.point.y < transform.position.y;
+        IsGrounded = Physics.SphereCast(transform.position, radius, Vector3.down, out var hit, 0.2f) && hit.point.y < transform.position.y;
 
         if (IsGrounded)
         {
             JumpInertia = Vector3.zero;
             HasJumpInertia = false;
         }
-        // var isFootRayGrounded = Physics.CapsuleCast(transform.position, Vector3.down, _distToGround + 0.1f);
+
         return IsGrounded;
     }
     public void OnTriggerEnter(Collider collider)
