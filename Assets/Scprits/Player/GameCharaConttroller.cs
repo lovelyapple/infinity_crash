@@ -6,6 +6,8 @@ using UnityEngine;
 
 public class GameCharaConttroller : MonoBehaviour
 {
+    public Camera mainCamera;
+    public float maxDistance = 500f; // レイキャストの最大距離
     public Transform CameraTransform;
     Rigidbody _rigidbody;
     SphereCollider _collider;
@@ -19,6 +21,7 @@ public class GameCharaConttroller : MonoBehaviour
     public bool IsInputing;
 
     public bool IsGrounded = false;
+    public bool CanJump = false;
     public bool HasJumpInertia = false;
     public Vector3 JumpInertia;
 
@@ -57,7 +60,7 @@ public class GameCharaConttroller : MonoBehaviour
 
         CheckIsGrounded();
 
-        if (IsGrounded)
+        if (CanJump)
         {
             if (Input.GetButtonDown("Jump"))
             {
@@ -88,6 +91,27 @@ public class GameCharaConttroller : MonoBehaviour
         foreach (var skill in finshedList)
         {
             skill.OnSkillFinished();
+        }
+
+        // 右クリックを検出
+        if (Input.GetMouseButtonDown(1))
+        {
+            // カメラの中央からレイを飛ばす
+            Ray ray = mainCamera.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
+            RaycastHit hit;
+
+            // レイが何かに当たった場合
+            if (Physics.Raycast(ray, out hit, maxDistance))
+            {
+                // ヒット位置と球体の中心のベクトルを計算
+                Vector3 hitDirection = (hit.point - _collider.transform.position).normalized;
+
+                // 球体の中心からコライダーの半径分だけ外側に移動した位置を計算
+                Vector3 targetPosition = hit.point + hitDirection * _collider.radius;
+
+                // オブジェクトを新しい位置に移動
+                transform.position = targetPosition;
+            }
         }
     }
     public float JumpTimeLeft = 3;
@@ -172,6 +196,10 @@ public class GameCharaConttroller : MonoBehaviour
             _rigidbody.AddRelativeForce(inputCache, ForceMode.Force);
             speed = Mathf.Sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
         }
+        else if(IsGrounded)
+        {
+            _rigidbody.velocity *= 0.4f * Time.deltaTime;
+        }
     }
     public Vector3 velocity;
     public float speed;
@@ -183,6 +211,7 @@ public class GameCharaConttroller : MonoBehaviour
 
         // 指定した方向にCapsuleCastを実行
         IsGrounded = Physics.SphereCast(transform.position, radius, Vector3.down, out var hit, 0.2f) && hit.point.y < transform.position.y;
+        CanJump = IsGrounded || (Physics.SphereCast(transform.position, radius, Vector3.down, out var jumpHit, 0.4f) && jumpHit.point.y < transform.position.y);
 
         if (IsGrounded)
         {
