@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,7 +25,7 @@ public class GameCharaConttroller : MonoBehaviour
     public bool CanJump = false;
     public bool HasJumpInertia = false;
     public Vector3 JumpInertia;
-
+    public float MaxSpeedVelocity = 30;
     public float SpeedBuffMaxSpeed = 0;
     public List<SkillBase> Skills = new List<SkillBase>();
     public bool HasSpeedRunSKill => Skills.Any(x => x.SkillType == SkillType.SpeedRun);
@@ -116,10 +117,13 @@ public class GameCharaConttroller : MonoBehaviour
     }
     public float JumpTimeLeft = 3;
     public bool AutoJump = false;
+    public bool IsJumped = false;
     private void Jump()
     {
         _rigidbody.velocity = new Vector3(_rigidbody.velocity.x, _rigidbody.velocity.y + JumpForce, _rigidbody.velocity.z);
         JumpInertia = _rigidbody.velocity;
+
+        IsJumped = true;
     }
 
     void FixedUpdate()
@@ -180,7 +184,7 @@ public class GameCharaConttroller : MonoBehaviour
             }
             else if(_rigidbody.velocity.y < 0)
             {
-                _rigidbody.velocity = new Vector3(_rigidbody.velocity.x, 0, _rigidbody.velocity.z); // 滑らないように速度をゼロにする
+                // _rigidbody.velocity = new Vector3(_rigidbody.velocity.x, 0, _rigidbody.velocity.z); // 滑らないように速度をゼロにする
                 _rigidbody.useGravity = false; // 重力をオフにする
             }
         }else
@@ -194,14 +198,31 @@ public class GameCharaConttroller : MonoBehaviour
             var inputCache = InputMoveSpeed;
             inputCache.y = 0;
             _rigidbody.AddRelativeForce(inputCache, ForceMode.Force);
-            speed = Mathf.Sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+
+            curVelocityPower = velocity.x * velocity.x + velocity.z * velocity.z;
+            var maxPower = MaxSpeedVelocity * MaxSpeedVelocity;
+
+            if(maxPower < curVelocityPower)
+            {
+                velocity.x = maxPower / curVelocityPower * velocity.x;
+                velocity.z = maxPower / curVelocityPower * velocity.z;
+                _rigidbody.velocity = velocity;
+            }
+
+            curVelocityPower = Mathf.Sqrt(curVelocityPower);
         }
         else if(IsGrounded)
         {
+            if(IsJumped)
+            {
+                IsJumped = false;
+                return;
+            }
             _rigidbody.velocity *= 0.4f * Time.deltaTime;
         }
     }
     public Vector3 velocity;
+    public float curVelocityPower;
     public float speed;
     public float maxSlopeAngle = 30;
 
@@ -211,7 +232,9 @@ public class GameCharaConttroller : MonoBehaviour
 
         // 指定した方向にCapsuleCastを実行
         IsGrounded = Physics.SphereCast(transform.position, radius, Vector3.down, out var hit, 0.2f) && hit.point.y < transform.position.y;
-        CanJump = IsGrounded || (Physics.SphereCast(transform.position, radius, Vector3.down, out var jumpHit, 0.4f) && jumpHit.point.y < transform.position.y);
+
+        var hits = Physics.SphereCastAll(transform.position, radius + 0.3f, Vector3.down, 0.1f);
+        CanJump = true;//= IsGrounded || hits.Any(x =>x.transform != null && x.transform.gameObject.tag != "Player" && x.point.y < transform.position.y);
 
         if (IsGrounded)
         {
