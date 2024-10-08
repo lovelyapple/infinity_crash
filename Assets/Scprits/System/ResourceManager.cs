@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class ResourceManager : MonoSingletoneBase<ResourceManager>
 {
+    public List<SkillSettingData> SkillSettingDatas;
     [SerializeField] List<GameObject> ScreenEffects;
     public void TurnOnEffect(string effectName)
     {
