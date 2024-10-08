@@ -7,6 +7,7 @@ public enum SkillType
 {
     None,
     SpeedRun,
+    SuperJump,
 }
 public enum SkillTimeType
 {

@@ -31,7 +31,9 @@ public class GameCharaConttroller : MonoBehaviour
     public float SpeedBuffMaxSpeed = 4;
     public List<SkillBase> Skills = new List<SkillBase>();
     public bool HasSpeedRunSKill => Skills.Any(x => x.SkillType == SkillType.SpeedRun);
+    public int SuperJumpCount => Skills.Count(x => x.SkillType == SkillType.SuperJump);
     public int RaycastMask;
+    public Action<GameCharaConttroller> OnSuperJumpUpdated;
     void Awake()
     {
         _rigidbody = GetComponent<Rigidbody>();
@@ -69,6 +71,13 @@ public class GameCharaConttroller : MonoBehaviour
             {
                 Jump(JumpForce);
             }
+            else if(Input.GetKeyDown(KeyCode.LeftControl) && SuperJumpCount > 0)
+            {
+                var skill = Skills.FirstOrDefault(x => x.SkillType == SkillType.SuperJump);
+                skill.OnSkillFire();
+                Jump(SkillSuperJump.SuperJumpPower);
+            }
+            
 
             if (AutoJump)
             {
