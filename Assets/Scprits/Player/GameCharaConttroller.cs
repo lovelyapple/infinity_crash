@@ -216,20 +216,15 @@ public class GameCharaConttroller : MonoBehaviour
             velocity = _rigidbody.velocity;
             var inputCache = InputMoveSpeed;
             inputCache.y = 0;
+
+            if (HasSpeedRunSKill)
+            {
+                inputCache *= 2f;
+            }
+
             _rigidbody.AddRelativeForce(inputCache, ForceMode.Force);
 
             curVelocityPower = velocity.x * velocity.x + velocity.z * velocity.z;
-
-
-            var maxPower = 0f;
-            if (HasSpeedRunSKill)
-            {
-                maxPower = SpeedBuffMaxSpeed + SpeedBuffMaxSpeed;
-            }
-            else
-            {
-                maxPower = MaxSpeedVelocity * MaxSpeedVelocity;
-            }
 
             var worldDorcetion = transform.TransformDirection(InputMoveSpeed);
   
@@ -293,6 +288,16 @@ public class GameCharaConttroller : MonoBehaviour
                 }
             }
 
+            var maxPower = 0f;
+            if (HasSpeedRunSKill)
+            {
+                maxPower = SpeedBuffMaxSpeed * SpeedBuffMaxSpeed;
+            }
+            else
+            {
+                maxPower = MaxSpeedVelocity * MaxSpeedVelocity;
+            }
+
             if (maxPower < curVelocityPower)
             {
                 velocity.x = maxPower / curVelocityPower * velocity.x;
@@ -330,8 +335,8 @@ public class GameCharaConttroller : MonoBehaviour
         // 指定した方向にCapsuleCastを実行
         IsGrounded = Physics.SphereCast(transform.position, radius, Vector3.down, out var hit, 0.2f) && hit.point.y < transform.position.y;
 
-        var hits = Physics.SphereCastAll(transform.position, radius + 0.3f, Vector3.down, 0.1f);
-        CanJump = IsGrounded;
+        var hits = Physics.SphereCastAll(transform.position, _collider.radius, Vector3.down, 0.4f);
+        CanJump = IsGrounded || hits.Any(x => x.transform != null && x.transform.gameObject.tag != "Player" && x.point.y < transform.position.y);
         CanWallJump = IsGrounded || hits.Any(x =>x.transform != null && x.transform.gameObject.tag != "Player" && x.point.y < transform.position.y);
         CanWallJump = false;
 
@@ -386,6 +391,7 @@ public class GameCharaConttroller : MonoBehaviour
                 skill.OnSkillFinished();
             }
         }
+
     }
     public void OnRemoveSkill(SkillBase skill)
     {
