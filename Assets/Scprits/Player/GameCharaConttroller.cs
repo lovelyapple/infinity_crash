@@ -67,7 +67,7 @@ public class GameCharaConttroller : MonoBehaviour
         {
             if (Input.GetButtonDown("Jump"))
             {
-                Jump();
+                Jump(JumpForce);
             }
 
             if (AutoJump)
@@ -79,7 +79,7 @@ public class GameCharaConttroller : MonoBehaviour
                     if (JumpTimeLeft <= 0)
                     {
                         JumpTimeLeft = 2;
-                        Jump();
+                        Jump(JumpForce);
                     }
                 }
             }
@@ -88,7 +88,7 @@ public class GameCharaConttroller : MonoBehaviour
         {
             if (Input.GetButtonDown("Jump"))
             {
-                Jump();
+                Jump(JumpForce);
             }
         }
 
@@ -137,9 +137,9 @@ public class GameCharaConttroller : MonoBehaviour
     public float WallJumpNeedPower;
     public bool IsHoldingWall;
     public float WallPackPowerRecover = 20f;
-    private void Jump()
+    private void Jump(float jumpForce)
     {
-        _rigidbody.velocity = new Vector3(_rigidbody.velocity.x, _rigidbody.velocity.y + JumpForce, _rigidbody.velocity.z);
+        _rigidbody.velocity = new Vector3(_rigidbody.velocity.x, _rigidbody.velocity.y + jumpForce, _rigidbody.velocity.z);
         JumpInertia = _rigidbody.velocity;
 
         IsJumped = true;
@@ -348,6 +348,7 @@ public class GameCharaConttroller : MonoBehaviour
 
         return IsGrounded;
     }
+    public float JumoBoardPower = 40f;
     public void OnTriggerEnter(Collider collider)
     {
         if (collider.gameObject.tag == "DangerApplyIcon")
@@ -360,6 +361,11 @@ public class GameCharaConttroller : MonoBehaviour
 
             AddSkillPool(skill);
             Destroy(collider.gameObject);
+        }
+        else if (collider.gameObject.tag == "JumpBoard")
+        {
+            var jumpPower = collider.gameObject.GetComponent<JumpBoard>().JumpPower;
+            Jump(jumpPower);
         }
     }
 
