@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameCharaConttroller : MonoBehaviour
 {
@@ -23,10 +24,11 @@ public class GameCharaConttroller : MonoBehaviour
 
     public bool IsGrounded = false;
     public bool CanJump = false;
+    public bool CanWallJump = false;
     public bool HasJumpInertia = false;
     public Vector3 JumpInertia;
-    public float MaxSpeedVelocity = 30;
-    public float SpeedBuffMaxSpeed = 0;
+    public float MaxSpeedVelocity = 8;
+    public float SpeedBuffMaxSpeed = 4;
     public List<SkillBase> Skills = new List<SkillBase>();
     public bool HasSpeedRunSKill => Skills.Any(x => x.SkillType == SkillType.SpeedRun);
     public int RaycastMask;
@@ -82,6 +84,19 @@ public class GameCharaConttroller : MonoBehaviour
                 }
             }
         }
+        else if(CanWallJump)
+        {
+            if (Input.GetButtonDown("Jump"))
+            {
+                Jump();
+            }
+        }
+
+        // や、今考えない
+        if(IsHoldingWall)
+        {
+
+        }
 
         foreach (var skill in Skills)
         {
@@ -118,6 +133,10 @@ public class GameCharaConttroller : MonoBehaviour
     public float JumpTimeLeft = 3;
     public bool AutoJump = false;
     public bool IsJumped = false;
+    public Slider WallPackPowerSlider;
+    public float WallJumpNeedPower;
+    public bool IsHoldingWall;
+    public float WallPackPowerRecover = 20f;
     private void Jump()
     {
         _rigidbody.velocity = new Vector3(_rigidbody.velocity.x, _rigidbody.velocity.y + JumpForce, _rigidbody.velocity.z);
@@ -200,9 +219,81 @@ public class GameCharaConttroller : MonoBehaviour
             _rigidbody.AddRelativeForce(inputCache, ForceMode.Force);
 
             curVelocityPower = velocity.x * velocity.x + velocity.z * velocity.z;
-            var maxPower = MaxSpeedVelocity * MaxSpeedVelocity;
 
-            if(maxPower < curVelocityPower)
+
+            var maxPower = 0f;
+            if (HasSpeedRunSKill)
+            {
+                maxPower = SpeedBuffMaxSpeed + SpeedBuffMaxSpeed;
+            }
+            else
+            {
+                maxPower = MaxSpeedVelocity * MaxSpeedVelocity;
+            }
+
+            var worldDorcetion = transform.TransformDirection(InputMoveSpeed);
+  
+            if(InputMoveSpeed.x == 0)
+            {
+                var localDirection = transform.InverseTransformDirection(velocity);
+                if (localDirection.x > 0)
+                {
+                    localDirection.x -= ReFriction * Time.deltaTime;
+                }
+                else if(localDirection.x < 0)
+                {
+                    localDirection.x += ReFriction * Time.deltaTime;
+                }
+                velocity = transform.TransformDirection(localDirection);
+                _rigidbody.velocity = velocity;
+            }
+            else
+            {
+                var localDirection = transform.InverseTransformDirection(velocity);
+                if (InputMoveSpeed.x > 0  && localDirection.x < 0)
+                {
+                    localDirection.x += ReFriction * Time.deltaTime;
+                    velocity = transform.TransformDirection(localDirection);
+                    _rigidbody.velocity = velocity;
+                }
+                else if (InputMoveSpeed.x < 0 && localDirection.x > 0)
+                {
+                    localDirection.x -= ReFriction * Time.deltaTime;
+                    velocity = transform.TransformDirection(localDirection);
+                    _rigidbody.velocity = velocity;
+                }
+            }
+            if (InputMoveSpeed.z == 0)
+            {
+                var localDirection = transform.InverseTransformDirection(velocity);
+                if (localDirection.z > 0)
+                {
+                    localDirection.z -= ReFriction * Time.deltaTime;
+                }
+                else if (localDirection.z < 0)
+                {
+                    localDirection.z += ReFriction * Time.deltaTime;
+                }
+                velocity = transform.TransformDirection(localDirection);
+            }
+            else
+            {
+                var localDirection = transform.InverseTransformDirection(velocity);
+                if (InputMoveSpeed.z > 0 && localDirection.z < 0)
+                {
+                    localDirection.z += ReFriction * Time.deltaTime;
+                    velocity = transform.TransformDirection(localDirection);
+                    _rigidbody.velocity = velocity;
+                }
+                else if (InputMoveSpeed.z < 0 && localDirection.z > 0)
+                {
+                    localDirection.z -= ReFriction * Time.deltaTime;
+                    velocity = transform.TransformDirection(localDirection);
+                    _rigidbody.velocity = velocity;
+                }
+            }
+
+            if (maxPower < curVelocityPower)
             {
                 velocity.x = maxPower / curVelocityPower * velocity.x;
                 velocity.z = maxPower / curVelocityPower * velocity.z;
@@ -210,6 +301,7 @@ public class GameCharaConttroller : MonoBehaviour
             }
 
             curVelocityPower = Mathf.Sqrt(curVelocityPower);
+
         }
         else if(IsGrounded)
         {
@@ -218,12 +310,17 @@ public class GameCharaConttroller : MonoBehaviour
                 IsJumped = false;
                 return;
             }
-            _rigidbody.velocity *= 0.4f * Time.deltaTime;
+
+            _rigidbody.velocity *= 0.85f;
         }
+
+        velocityLocal = transform.InverseTransformDirection(_rigidbody.velocity);
     }
     public Vector3 velocity;
+    public Vector3 velocityLocal;
     public float curVelocityPower;
-    public float speed;
+    
+    public float ReFriction = 1f;
     public float maxSlopeAngle = 30;
 
     bool CheckIsGrounded()
@@ -234,7 +331,9 @@ public class GameCharaConttroller : MonoBehaviour
         IsGrounded = Physics.SphereCast(transform.position, radius, Vector3.down, out var hit, 0.2f) && hit.point.y < transform.position.y;
 
         var hits = Physics.SphereCastAll(transform.position, radius + 0.3f, Vector3.down, 0.1f);
-        CanJump = true;//= IsGrounded || hits.Any(x =>x.transform != null && x.transform.gameObject.tag != "Player" && x.point.y < transform.position.y);
+        CanJump = IsGrounded;
+        CanWallJump = IsGrounded || hits.Any(x =>x.transform != null && x.transform.gameObject.tag != "Player" && x.point.y < transform.position.y);
+        CanWallJump = false;
 
         if (IsGrounded)
         {
