@@ -8,6 +8,7 @@ TagManager:
   - DangerApplyIcon
   - ScorePoint
   - JumpBoard
+  - FieldSkill
   layers:
   - Default
   - TransparentFX

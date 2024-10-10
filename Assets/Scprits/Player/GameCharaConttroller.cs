@@ -376,6 +376,11 @@ public class GameCharaConttroller : MonoBehaviour
             var jumpPower = collider.gameObject.GetComponent<JumpBoard>().JumpPower;
             Jump(jumpPower);
         }
+        else if (collider.gameObject.tag == "FieldSkill")
+        {
+            var skillObj = collider.gameObject.GetComponent<FieldSkill>(); ;
+            skillObj.RequestTouch();
+        }
     }
 
     public bool AddSkillPool(SkillBase skillBase)
