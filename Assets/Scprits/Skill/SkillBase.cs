@@ -69,9 +69,8 @@ public class SkillBase
 
             if (_settingData.EffectType == EffectType.Field)
             {
-                Effect.gameObject.transform.SetParent(_fieldTransform, false);
                 Effect.gameObject.transform.localScale = Vector3.one;
-                Effect.gameObject.transform.localPosition = Vector3.zero;
+                Effect.gameObject.transform.position = _fieldTransform.position;
             }
         }
         else if (!string.IsNullOrEmpty(_settingData.ScreenEffectName))
@@ -98,7 +97,7 @@ public class SkillBase
     {
         if (Effect)
         {
-            GameObject.Destroy(Effect);
+            // GameObject.Destroy(Effect);
         }
 
         if (!string.IsNullOrEmpty(_settingData.ScreenEffectName))
@@ -108,18 +107,5 @@ public class SkillBase
 
         _player.OnRemoveSkill(this);
         _settingData = null;
-    }
-}
-public static class SkillCreator
-{
-    public static SkillBase CreateSkill(SkillSettingData skillSettingData)
-    {
-        switch (skillSettingData.Type)
-        {
-            case SkillType.SpeedRun:
-                return new SkillSpeedRun();
-            default:
-                return null;
-        }
     }
 }

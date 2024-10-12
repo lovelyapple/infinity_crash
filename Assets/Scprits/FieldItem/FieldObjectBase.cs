@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class FieldObjectBase : MonoBehaviour
 {
-    public void RequestTouch()
+    public virtual void RequestTouch()
     {
         if(OnTouched != null)
         {

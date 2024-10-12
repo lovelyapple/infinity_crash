@@ -33,7 +33,7 @@ public class GameCharaConttroller : MonoBehaviour
     public bool HasSpeedRunSKill => Skills.Any(x => x.SkillType == SkillType.SpeedRun);
     public int SuperJumpCount => Skills.Count(x => x.SkillType == SkillType.SuperJump);
     public int RaycastMask;
-    public Action<GameCharaConttroller> OnSuperJumpUpdated;
+    public Action<List<SkillBase>> OnUpdateSkills;
     void Awake()
     {
         _rigidbody = GetComponent<Rigidbody>();
@@ -67,15 +67,19 @@ public class GameCharaConttroller : MonoBehaviour
 
         if (CanJump)
         {
-            if (Input.GetButtonDown("Jump"))
+            if(Input.GetKey(KeyCode.LeftShift))
+            {
+                if (SuperJumpCount > 0 && Input.GetKeyDown(KeyCode.Space))
+                {
+                    var skill = Skills.FirstOrDefault(x => x.SkillType == SkillType.SuperJump);
+                    skill.OnSkillFire();
+                    Jump(SkillSuperJump.SuperJumpPower);
+                }
+            }
+            else if (Input.GetButtonDown("Jump"))
             {
                 Jump(JumpForce);
-            }
-            else if(Input.GetKeyDown(KeyCode.LeftControl) && SuperJumpCount > 0)
-            {
-                var skill = Skills.FirstOrDefault(x => x.SkillType == SkillType.SuperJump);
-                skill.OnSkillFire();
-                Jump(SkillSuperJump.SuperJumpPower);
+
             }
             
 
@@ -363,12 +367,6 @@ public class GameCharaConttroller : MonoBehaviour
         if (collider.gameObject.tag == "DangerApplyIcon")
         {
             var FieldAppIcon = collider.gameObject.GetComponent<FieldAppIcon>();
-            var settingData = FieldAppIcon.SkillSettingData;
-
-            var skill = SkillCreator.CreateSkill(settingData);
-            skill.Initialize(settingData, this, collider.transform);
-
-            AddSkillPool(skill);
             Destroy(collider.gameObject);
         }
         else if (collider.gameObject.tag == "JumpBoard")
@@ -378,8 +376,28 @@ public class GameCharaConttroller : MonoBehaviour
         }
         else if (collider.gameObject.tag == "FieldSkill")
         {
-            var skillObj = collider.gameObject.GetComponent<FieldSkill>(); ;
+            var skillObj = collider.gameObject.GetComponent<FieldSkill>();
             skillObj.RequestTouch();
+
+            var settingData = GameSkillChooser.Instance.GetOneSkillData();
+
+            if(settingData == null)
+            {
+                return;
+            }
+
+            var skill = GameSkillChooser.CreateSkill(settingData);
+            skill.Initialize(settingData, this, this.gameObject.transform);
+            if (AddSkillPool(skill))
+            {
+                GameHUDController.Instance.UpdateSkills(Skills);
+            }
+        }
+        else if(collider.gameObject.tag == "ScorePoint")
+        {
+            var scorePoint = collider.gameObject.GetComponent<ScorePoint>();
+            scorePoint.OnTouched();
+            ApplicationPressureManager.Instance.AddPressure(scorePoint.ScoreType);
         }
     }
 
@@ -390,6 +408,8 @@ public class GameCharaConttroller : MonoBehaviour
         {
             return false;
         }
+
+
         Skills.Add(skillBase);
 
         if (skillBase.IsAutoFire)
@@ -416,5 +436,6 @@ public class GameCharaConttroller : MonoBehaviour
     public void OnRemoveSkill(SkillBase skill)
     {
         Skills.Remove(skill);
+        GameHUDController.Instance.UpdateSkills(Skills);
     }
 }

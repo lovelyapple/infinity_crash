@@ -25,13 +25,13 @@ public class SpawnerBase : MonoBehaviour
         var ray = new Ray();
         ray.origin = transform.position;
         ray.direction = Vector3.down;
-        FloatPos = EffectObject.transform.position;
+        FloatPos = HoldingObject.transform.position;
         if (Physics.Raycast(ray, out var hit, 10))
         {
             transform.position = hit.point - Vector3.up * 0.01f;
         }
 
-        EffectObject.transform.position = FloatPos;
+        HoldingObject.transform.position = FloatPos;
         HoldingObject.OnTouched = OnRequestTurnOff;
     }
     public void Update()
@@ -53,15 +53,18 @@ public class SpawnerBase : MonoBehaviour
             OnRequestTurnOn();
         }
     }
-    public void OnRequestTurnOn()
+    public virtual void OnRequestTurnOn()
     {
         HoldingObject.gameObject.SetActive(true);
         IsActive = true;
         NextSpawnTimeLeft = SpawnTime;
     }
-    public void OnRequestTurnOff()
+    public virtual void OnRequestTurnOff()
     {
-        EffectObject.SetActive(true);
+        if (EffectObject != null)
+        {
+            EffectObject.SetActive(true);
+        }
         HoldingObject.gameObject.SetActive(false);
         IsActive = false;
     }

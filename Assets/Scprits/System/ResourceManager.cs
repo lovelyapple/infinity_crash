@@ -1,10 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class ResourceManager : MonoSingletoneBase<ResourceManager>
 {
-    public List<SkillSettingData> SkillSettingDatas;
+    public List<FieldAppIcon> FieldAppIcons;
     [SerializeField] List<GameObject> ScreenEffects;
     public void TurnOnEffect(string effectName)
     {
@@ -27,5 +28,10 @@ public class ResourceManager : MonoSingletoneBase<ResourceManager>
                 return;
             }
         }
+    }
+    public FieldAppIcon CreateFieldIcon(ApplicationType type)
+    {
+        var prefab = FieldAppIcons.FirstOrDefault(x => x.ApplicationType == type);
+        return Instantiate<FieldAppIcon>(prefab);
     }
 }

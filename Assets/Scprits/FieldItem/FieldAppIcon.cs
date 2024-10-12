@@ -4,5 +4,5 @@ using UnityEngine;
 
 public class FieldAppIcon : MonoBehaviour
 {
-    public SkillSettingData SkillSettingData;
+    public ApplicationType ApplicationType;
 }
