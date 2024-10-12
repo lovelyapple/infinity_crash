@@ -9,6 +9,7 @@ public class GameHUDController : MonoSingletoneBase<GameHUDController>
 {
     public GameObject SuperJumpObject;
     public List<UISkillIconController> SkillIconControllers;
+    public List<UIApplicationCrashingController> UIApplicationCrashingControllers;
 
     public void Initialize(GameCharaConttroller gameCharaConttroller)
     {
