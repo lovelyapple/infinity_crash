@@ -1,40 +1,79 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UIApplicationTrackingController : MonoBehaviour
 {
     public ApplicationType ApplicationType;
     public RectTransform rectTransform;
-    public FieldAppIcon HoldingIcon;
+    public FieldApplicationSpawner HoldingSpawner;
     public float fovInRadians;
     public RectTransform TargetRect;
     float halfWidth;
-    public void SetupIcon(FieldAppIcon icon)
-    {
-        HoldingIcon = icon;
-        gameObject.SetActive(true);
+    public Image FillImage;
+    public float MaxFlashAddSpeed = 3f;
 
-    }
+    public float elapsedTime = 0;
+    const float pid = 3.14f * 2f;
+    private PressureInfo _pressureInfo;
+    public float flashSpeedRate;
     public void Start()
     {
         fovInRadians = (90 - Camera.main.fieldOfView / 2f) * Mathf.Deg2Rad;
         halfWidth = TargetRect.rect.width / 2f;
     }
+    public void Init(FieldApplicationSpawner spawner, PressureInfo pressureInfo)
+    {
+        HoldingSpawner = spawner;
+        _pressureInfo = pressureInfo;
+        gameObject.SetActive(true);
+    }
+    public void Clear()
+    {
+        HoldingSpawner = null;
+    }
+    public void Update()
+    {
+        if(_pressureInfo == null)
+        {
+            return;
+        }
+        
+        var curPres = _pressureInfo.Pressure;
+        var flashStartDiff = ApplicationPressureManager.Instance.PressureMax - curPres;
+        var maxDiff = ApplicationPressureManager.Instance.PressureMax - ApplicationPressureManager.Instance.PressureCrashing;
 
+        if (flashStartDiff > 0)
+        {
+            flashSpeedRate = 1 - flashStartDiff / maxDiff;
+        }
+        else
+        {
+            flashSpeedRate = 1f;
+        }
+        elapsedTime += (flashSpeedRate * MaxFlashAddSpeed *  Time.deltaTime);
+        if (elapsedTime > pid)
+        {
+            elapsedTime -= pid;
+        }
+
+        var cosV = (Mathf.Sin(elapsedTime) + 1f) * 0.5f;
+
+        var col = FillImage.color;
+        col.a = cosV;
+        FillImage.color = col;
+        FillImage.fillAmount = flashSpeedRate;
+    }
     public void FixedUpdate()
     {
-        if(HoldingIcon == null)
+        if(HoldingSpawner == null)
         {
             gameObject.SetActive(false);
             return;
         }
 
-        var localPos = Camera.main.transform.InverseTransformPoint(HoldingIcon.transform.position).normalized;
+        var localPos = Camera.main.transform.InverseTransformPoint(HoldingSpawner.transform.position).normalized;
         // ワールド座標をスクリーン座標に変換
-        Vector3 screenPosition = Camera.main.WorldToScreenPoint(HoldingIcon.transform.position);
+        Vector3 screenPosition = Camera.main.WorldToScreenPoint(HoldingSpawner.transform.position);
 
         if (localPos.z < 0 || screenPosition.x < 0 || screenPosition.x > Screen.width || screenPosition.y < 0 || screenPosition.y > Screen.height)
         {

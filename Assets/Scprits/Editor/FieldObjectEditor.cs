@@ -50,6 +50,16 @@ public class FieldObjectEditor : EditorWindow
                 spawner.transform.position = hit.point + Vector3.up * ScoreFloatHeigth;
             }
         }
+
+        var appSpawner = FindObjectsOfType<FieldApplicationSpawner>().Select(x => x.transform);
+
+        foreach (var spawner in appSpawner)
+        {
+            if (Physics.Raycast(spawner.position, Vector3.down, out var hit, 10f))
+            {
+                spawner.transform.position = hit.point + Vector3.up * ScoreFloatHeigth;
+            }
+        }
     }
     private float _updateTimeLeft;
     public void Update()

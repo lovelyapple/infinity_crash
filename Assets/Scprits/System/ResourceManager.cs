@@ -6,6 +6,7 @@ using UnityEngine;
 public class ResourceManager : MonoSingletoneBase<ResourceManager>
 {
     public List<FieldAppIcon> FieldAppIcons;
+    public LineRenderer LineRenderer;
     [SerializeField] List<GameObject> ScreenEffects;
     public void TurnOnEffect(string effectName)
     {

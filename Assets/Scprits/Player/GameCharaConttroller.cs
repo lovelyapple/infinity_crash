@@ -8,18 +8,17 @@ using UnityEngine.UI;
 
 public class GameCharaConttroller : MonoBehaviour
 {
+    public GameSettings CurGameSettings;
     public Camera mainCamera;
     public float maxDistance = 500f; // レイキャストの最大距離
     public Transform CameraTransform;
     Rigidbody _rigidbody;
     SphereCollider _collider;
     float _distToGround;
-    public float JumpForce = 5f;
-    public float mouseSensitivity = 100f;  // マウス感度
+
     private float xRotation = 0f;
 
     public Vector3 InputMoveSpeed;
-    public float InputForce = 1f;
     public bool IsInputing;
 
     public bool IsGrounded = false;
@@ -27,8 +26,6 @@ public class GameCharaConttroller : MonoBehaviour
     public bool CanWallJump = false;
     public bool HasJumpInertia = false;
     public Vector3 JumpInertia;
-    public float MaxSpeedVelocity = 8;
-    public float SpeedBuffMaxSpeed = 4;
     public List<SkillBase> Skills = new List<SkillBase>();
     public bool HasSpeedRunSKill => Skills.Any(x => x.SkillType == SkillType.SpeedRun);
     public int SuperJumpCount => Skills.Count(x => x.SkillType == SkillType.SuperJump);
@@ -48,6 +45,8 @@ public class GameCharaConttroller : MonoBehaviour
     void Update()
     {
         // マウスのX軸とY軸の入力を取得
+        var mouseSensitivity = CurGameSettings.CurCharacterSettings.MouseSensitivity;
+        var jumpForce  = CurGameSettings.CurCharacterSettings.JumpForce;
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
 
@@ -78,7 +77,7 @@ public class GameCharaConttroller : MonoBehaviour
             }
             else if (Input.GetButtonDown("Jump"))
             {
-                Jump(JumpForce);
+                Jump(jumpForce);
 
             }
             
@@ -92,7 +91,7 @@ public class GameCharaConttroller : MonoBehaviour
                     if (JumpTimeLeft <= 0)
                     {
                         JumpTimeLeft = 2;
-                        Jump(JumpForce);
+                        Jump(jumpForce);
                     }
                 }
             }
@@ -101,7 +100,7 @@ public class GameCharaConttroller : MonoBehaviour
         {
             if (Input.GetButtonDown("Jump"))
             {
-                Jump(JumpForce);
+                Jump(jumpForce);
             }
         }
 
@@ -161,14 +160,15 @@ public class GameCharaConttroller : MonoBehaviour
     void FixedUpdate()
     {
         IsInputing = false;
+        var inputForce = CurGameSettings.CurCharacterSettings.InputForce;
         if (Input.GetKey(KeyCode.W))
         {
-            InputMoveSpeed.z = InputForce * Time.deltaTime;
+            InputMoveSpeed.z = inputForce * Time.deltaTime;
             IsInputing = true;
         }
         else if (Input.GetKey(KeyCode.S))
         {
-            InputMoveSpeed.z = -InputForce * Time.deltaTime;
+            InputMoveSpeed.z = -inputForce * Time.deltaTime;
             IsInputing = true;
         }
         else
@@ -178,13 +178,13 @@ public class GameCharaConttroller : MonoBehaviour
 
         if (Input.GetKey(KeyCode.A))
         {
-            InputMoveSpeed.x = -InputForce * Time.deltaTime;
+            InputMoveSpeed.x = -inputForce * Time.deltaTime;
             IsInputing = true;
         }
         else if (Input.GetKey(KeyCode.D))
         {
 
-            InputMoveSpeed.x = InputForce * Time.deltaTime;
+            InputMoveSpeed.x = inputForce * Time.deltaTime;
             IsInputing = true;
         }
         else
@@ -304,11 +304,11 @@ public class GameCharaConttroller : MonoBehaviour
             var maxPower = 0f;
             if (HasSpeedRunSKill)
             {
-                maxPower = SpeedBuffMaxSpeed * SpeedBuffMaxSpeed;
+                maxPower = CurGameSettings.CurCharacterSettings.MaxSpeedNormal * CurGameSettings.CurCharacterSettings.MaxSpeedNormal;
             }
             else
             {
-                maxPower = MaxSpeedVelocity * MaxSpeedVelocity;
+                maxPower = CurGameSettings.CurCharacterSettings.MaxSpeedBuffed * CurGameSettings.CurCharacterSettings.MaxSpeedBuffed;
             }
 
             if (maxPower < curVelocityPower)
@@ -367,7 +367,8 @@ public class GameCharaConttroller : MonoBehaviour
         if (collider.gameObject.tag == "DangerApplyIcon")
         {
             var FieldAppIcon = collider.gameObject.GetComponent<FieldAppIcon>();
-            Destroy(collider.gameObject);
+
+            FieldAppIcon.RequestTouch();
         }
         else if (collider.gameObject.tag == "JumpBoard")
         {

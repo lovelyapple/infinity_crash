@@ -5,12 +5,17 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class GameHUDController : MonoSingletoneBase<GameHUDController>
+public class GameHUDController : MonoBehaviour
 {
+    public static GameHUDController Instance;
     public GameObject SuperJumpObject;
     public List<UISkillIconController> SkillIconControllers;
     public List<UIApplicationCrashingController> UIApplicationCrashingControllers;
-
+    public List<UIApplicationTrackingController> UIApplicationTrackings;
+    void Awake()
+    {
+        Instance = this;
+    }
     public void Initialize(GameCharaConttroller gameCharaConttroller)
     {
 

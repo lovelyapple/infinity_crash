@@ -21,7 +21,10 @@ public class SpawnerBase : MonoBehaviour
     public Vector3 FloatPos;
     public void Awake()
     {
-        OnRequestTurnOn();
+        if (SpawnType == FieldSpawnType.Auto)
+        {
+            OnRequestTurnOn();
+        }
         var ray = new Ray();
         ray.origin = transform.position;
         ray.direction = Vector3.down;
