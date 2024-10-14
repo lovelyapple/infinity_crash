@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SocialPlatforms.Impl;
 public enum ScoreType
 {
     Enginer,
@@ -32,18 +33,57 @@ public class ScorePressureSetting
     public ScoreType ScoreType;
     public List<PressureInfo> PressureInfos;
 }
+[Serializable] 
+public class ScoreInfo
+{
+    public ScoreType ScoreType;
+    public long Score;
+}
 public class ApplicationPressureManager : MonoSingletoneBase<ApplicationPressureManager>
 {
     public List<ScorePressureSetting> PressureSettings;
     public List<PressureInfo> CurrentPressures;
     public List<FieldApplicationSpawner> FieldApplicationSpawners;
+    public List<ScoreInfo> ScoreInfos;
 
     public float PressureCrashing = 10000;
     public float PressureMax = 15000;
     public float PressureDecreaseOnDestory = 8000;
+    private bool IsPlaying = true;
+    public override void OnAwake()
+    {
+        GameModel.Instance.OnGotoTitle += OnGotoTitle;
+        GameModel.Instance.OnStartGame += OnGameStart;
+        GameModel.Instance.OnFinished += OnFinished;
+        base.OnAwake();
+    }
+    public void OnDestory()
+    {
+        GameModel.Instance.OnGotoTitle -= OnGotoTitle;
+        GameModel.Instance.OnStartGame -= OnGameStart;
+        GameModel.Instance.OnFinished -= OnFinished;
+    }
+    public void OnGotoTitle()
+    {
+        IsPlaying = true;
+        CurrentPressures.Clear();
+        ScoreInfos.Clear();
+    }
+    public void OnGameStart()
+    {
+        IsPlaying = true;
+    }
+    public void OnFinished()
+    {
+        IsPlaying = false;
+    }
 
     public void AddPressure(ScoreType scoreType)
     {
+        if(!IsPlaying)
+        {
+            return;
+        }
         var setting = PressureSettings.FirstOrDefault(x => x.ScoreType == scoreType);
 
         if(setting != null)
@@ -68,16 +108,32 @@ public class ApplicationPressureManager : MonoSingletoneBase<ApplicationPressure
                 curPres.PressureLevel += pressure.PressureLevel;
             }
         }
+
+        var scoreInfo = ScoreInfos.FirstOrDefault(x => x.ScoreType == scoreType);
+        
+        if(scoreInfo != null)
+        {
+            scoreInfo.Score++;
+        }
+        else
+        {
+            ScoreInfos.Add(new ScoreInfo() { ScoreType = scoreType });
+        }
     }
     public void Update()
     {
-        foreach(var pressure in CurrentPressures)
+        if (!IsPlaying)
+        {
+            return;
+        }
+        foreach (var pressure in CurrentPressures)
         {
             float prePressure = pressure.Pressure;
             pressure.Pressure += pressure.PressureLevel * Time.deltaTime;
             if (pressure.Pressure > PressureMax)
             {
                 pressure.Pressure = PressureMax;
+                GameModel.Instance.EndGame();
             }
 
             if(prePressure < PressureCrashing && pressure.Pressure > PressureCrashing)

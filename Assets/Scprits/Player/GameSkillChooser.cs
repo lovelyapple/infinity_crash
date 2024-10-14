@@ -9,7 +9,7 @@ public class GameSkillChooser : MonoSingletoneBase<GameSkillChooser>
     public SkillSettingData GetOneSkillData()
     {
         var count = SkillSettingDatas.Count;
-        var index = UnityEngine.Random.Range(0, count);
+        var index = Random.Range(0, count);
         return SkillSettingDatas[index];
     }
 

@@ -31,15 +31,45 @@ public class GameCharaConttroller : MonoBehaviour
     public int SuperJumpCount => Skills.Count(x => x.SkillType == SkillType.SuperJump);
     public int RaycastMask;
     public Action<List<SkillBase>> OnUpdateSkills;
+    public bool CanMove = false;
     void Awake()
     {
         _rigidbody = GetComponent<Rigidbody>();
         _collider = GetComponent<SphereCollider>();
         _distToGround = _collider.bounds.extents.y;
 
-        // カーソルを画面中央に固定し、カーソルの表示を無効化
-        Cursor.lockState = CursorLockMode.Locked;
         RaycastMask = 1 << LayerMask.NameToLayer("FieldIcon");
+
+        GameModel.Instance.OnStartGame += OnGameStart;
+        GameModel.Instance.OnFinished += OnGameFinished;
+        GameModel.Instance.OnGotoTitle += OnGotoTitle;
+    }
+    void OnDestory()
+    {
+        GameModel.Instance.OnStartGame -= OnGameStart;
+        GameModel.Instance.OnFinished -= OnGameFinished;
+        GameModel.Instance.OnGotoTitle -= OnGotoTitle;
+    }
+    private void OnGameStart()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        CanMove = true;
+    }
+    private void OnGameFinished()
+    {
+        Cursor.lockState = CursorLockMode.None;
+
+        var skills = Skills.ToList();
+        foreach (var skill in skills)
+        {
+            skill.OnSkillFinished();
+        }
+        CanMove = false;
+    }
+    private void OnGotoTitle()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        CanMove = false;
     }
     // Update is called once per frame
     void Update()
@@ -64,43 +94,46 @@ public class GameCharaConttroller : MonoBehaviour
 
         CheckIsGrounded();
 
-        if (CanJump)
+        if (CanMove)
         {
-            if(Input.GetKey(KeyCode.LeftShift))
+            if (CanJump)
             {
-                if (SuperJumpCount > 0 && Input.GetKeyDown(KeyCode.Space))
+                if (Input.GetKey(KeyCode.LeftShift))
                 {
-                    var skill = Skills.FirstOrDefault(x => x.SkillType == SkillType.SuperJump);
-                    skill.OnSkillFire();
-                    Jump(SkillSuperJump.SuperJumpPower);
-                }
-            }
-            else if (Input.GetButtonDown("Jump"))
-            {
-                Jump(jumpForce);
-
-            }
-            
-
-            if (AutoJump)
-            {
-                if (JumpTimeLeft > 0)
-                {
-                    JumpTimeLeft -= Time.deltaTime;
-
-                    if (JumpTimeLeft <= 0)
+                    if (SuperJumpCount > 0 && Input.GetKeyDown(KeyCode.Space))
                     {
-                        JumpTimeLeft = 2;
-                        Jump(jumpForce);
+                        var skill = Skills.FirstOrDefault(x => x.SkillType == SkillType.SuperJump);
+                        skill.OnSkillFire();
+                        Jump(SkillSuperJump.SuperJumpPower);
+                    }
+                }
+                else if (Input.GetButtonDown("Jump"))
+                {
+                    Jump(jumpForce);
+
+                }
+
+
+                if (AutoJump)
+                {
+                    if (JumpTimeLeft > 0)
+                    {
+                        JumpTimeLeft -= Time.deltaTime;
+
+                        if (JumpTimeLeft <= 0)
+                        {
+                            JumpTimeLeft = 2;
+                            Jump(jumpForce);
+                        }
                     }
                 }
             }
-        }
-        else if(CanWallJump)
-        {
-            if (Input.GetButtonDown("Jump"))
+            else if (CanWallJump)
             {
-                Jump(jumpForce);
+                if (Input.GetButtonDown("Jump"))
+                {
+                    Jump(jumpForce);
+                }
             }
         }
 
@@ -224,7 +257,7 @@ public class GameCharaConttroller : MonoBehaviour
             _rigidbody.useGravity = true;
         }
 
-        if (InputMoveSpeed.x != 0 || InputMoveSpeed.z != 0)
+        if (CanMove && (InputMoveSpeed.x != 0 || InputMoveSpeed.z != 0))
         {
             velocity = _rigidbody.velocity;
             var inputCache = InputMoveSpeed;
