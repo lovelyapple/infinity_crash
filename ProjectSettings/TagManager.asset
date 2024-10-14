@@ -9,6 +9,8 @@ TagManager:
   - ScorePoint
   - JumpBoard
   - FieldSkill
+  - Damageable
+  - Damaging
   layers:
   - Default
   - TransparentFX
