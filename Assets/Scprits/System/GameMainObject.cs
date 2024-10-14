@@ -1,9 +1,21 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.PostProcessing;
 
 public class GameMainObject : MonoSingletoneBase<GameMainObject>
 {
+    [SerializeField] private PostProcessVolume PostProcessVolume;
+    private DepthOfField _depthOfField;
+    public DepthOfField DepthOfField { get
+        {
+            if (_depthOfField == null)
+            {
+                PostProcessVolume.profile.TryGetSettings(out _depthOfField);
+            }
+            return _depthOfField;
+        }
+    }
     public GameCharaConttroller GameCharaController;
     Coroutine _startGameCoroutine;
     public void RequestStartGame()
@@ -33,5 +45,13 @@ public class GameMainObject : MonoSingletoneBase<GameMainObject>
 
         GameModel.Instance.StartGame();
         _startGameCoroutine = null;
+    }
+    public void DoFOn()
+    {
+        DepthOfField.focalLength.value = 300f;
+    }
+    public void DoFOff()
+    {
+        DepthOfField.focalLength.value = 0;
     }
 }

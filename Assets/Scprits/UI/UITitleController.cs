@@ -9,6 +9,7 @@ public class UITitleController : MonoBehaviour
         GameModel.Instance.OnStartGame += OnGameStart;
         GameModel.Instance.OnFinished += OnGameFinished;
         GameModel.Instance.OnGotoTitle += OnGotoTitle;
+        GameMainObject.Instance.DoFOn();
     }
     private void OnDestory()
     {

@@ -33,18 +33,21 @@ public class GameModel
     public void GotoTitle()
     {
         _currentGmaePhase = GamgePhase.Title;
-        if(OnGotoTitle != null)
-        OnGotoTitle.Invoke();
+        GameMainObject.Instance.DoFOn();
+        if (OnGotoTitle != null)
+            OnGotoTitle.Invoke();
     }
     public void StartGame()
     {
         _currentGmaePhase = GamgePhase.Game;
+        GameMainObject.Instance.DoFOff();
         if (OnStartGame != null)
             OnStartGame.Invoke();
     }
     public void EndGame()
     {
         _currentGmaePhase = GamgePhase.Result;
+        GameMainObject.Instance.DoFOn();
         if (OnFinished != null)
             OnFinished.Invoke();
     }
