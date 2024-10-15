@@ -8,6 +8,7 @@ public enum SkillType
     None,
     SpeedRun,
     SuperJump,
+    AddTime,
 }
 public enum SkillTimeType
 {
@@ -100,7 +101,7 @@ public class SkillBase
             // GameObject.Destroy(Effect);
         }
 
-        if (!string.IsNullOrEmpty(_settingData.ScreenEffectName))
+        if (!string.IsNullOrEmpty(_settingData.ScreenEffectName) && _settingData.TimeType != SkillTimeType.OneShot)
         {
             ResourceManager.Instance.TurneOffEffect(_settingData.ScreenEffectName);
         }

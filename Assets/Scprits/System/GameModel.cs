@@ -32,10 +32,12 @@ public class GameModel
     public Action OnFinished;
     const float DefaultGameTime = 60 * 3f;
     public float TimeLeft = DefaultGameTime;
+    public int TimeAddedCount = 0;
     public void GotoTitle()
     {
         _currentGmaePhase = GamgePhase.Title;
         TimeLeft = DefaultGameTime;
+        TimeAddedCount = 0;
         GameMainObject.Instance.DoFOn();
         if (OnGotoTitle != null)
             OnGotoTitle.Invoke();
@@ -44,6 +46,7 @@ public class GameModel
     {
         _currentGmaePhase = GamgePhase.Game;
         TimeLeft = DefaultGameTime;
+        TimeAddedCount = 0;
         GameMainObject.Instance.DoFOff();
         if (OnStartGame != null)
             OnStartGame.Invoke();
@@ -72,5 +75,13 @@ public class GameModel
         }
 
         return TimeLeft;
+    }
+    public void AddTime()
+    {
+        if(_currentGmaePhase == GamgePhase.Game)
+        {
+            TimeLeft += SkillTimeAdd.TimeAdd;
+            TimeAddedCount++;
+        }
     }
 }

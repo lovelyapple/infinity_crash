@@ -21,6 +21,8 @@ public class GameSkillChooser : MonoSingletoneBase<GameSkillChooser>
                 return new SkillSpeedRun();
             case SkillType.SuperJump:
                 return new SkillSuperJump();
+            case SkillType.AddTime:
+                return new SkillTimeAdd();
             default:
                 return null;
         }

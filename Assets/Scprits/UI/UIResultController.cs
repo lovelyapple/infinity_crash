@@ -19,6 +19,7 @@ public class UIResultController : MonoBehaviour
     [SerializeField] TextMeshProUGUI FinalScoreTitleLabel;
     [SerializeField] TextMeshProUGUI FinalScoreDiscriptionLabel;
     [SerializeField] GameObject GotoTitleObj;
+    [SerializeField] TextMeshProUGUI BonustTimeCountLabel;
 
     private readonly Dictionary<ResultType, (string, string)> ResultDisplayDict = new Dictionary<ResultType, (string, string)>
     {
@@ -69,6 +70,7 @@ public class UIResultController : MonoBehaviour
         FinalScoreTitleLabel.gameObject.SetActive(false);
         FinalScoreDiscriptionLabel.gameObject.SetActive(false);
         GotoTitleObj.SetActive(false);
+        BonustTimeCountLabel.text = $"{GameModel.Instance.TimeAddedCount} x 10s";
         foreach (var scoreinfo in scoreInfos)
         {
             var label = ScoreLabels.FirstOrDefault(x => x.ScoreType == scoreinfo.ScoreType);
