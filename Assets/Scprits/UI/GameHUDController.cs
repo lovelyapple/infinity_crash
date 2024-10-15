@@ -13,6 +13,7 @@ public class GameHUDController : MonoBehaviour
     public List<UISkillIconController> SkillIconControllers;
     public List<UIApplicationCrashingController> UIApplicationCrashingControllers;
     public List<UIApplicationTrackingController> UIApplicationTrackings;
+    public TextMeshProUGUI TimeLeftLabel;
 
     public UITitleController TitleController;
     public UICountDownController CountDownController;
@@ -66,7 +67,7 @@ public class GameHUDController : MonoBehaviour
         ResultController.gameObject.SetActive(false);
         GameMainObject.Instance.GameCharaController.enabled = false;
     }
-
+    
     public void UpdateSkills(List<SkillBase> skillBases)
     {
         SkillIconControllers.ForEach(ctrl =>
@@ -86,5 +87,16 @@ public class GameHUDController : MonoBehaviour
         });
 
         SuperJumpObject.gameObject.SetActive(skillBases.Any(x => x.SkillType == SkillType.SuperJump));
+    }
+    public void Update()
+    {
+       var seconds = GameModel.Instance.UpdateTimeLeft();
+
+        if (seconds >= 0)
+        {
+            var minutes = (int)(seconds / 60);
+            var remaining_seconds = (int)(seconds % 60);
+            TimeLeftLabel.text = $"{minutes}:{remaining_seconds}";
+        }
     }
 }

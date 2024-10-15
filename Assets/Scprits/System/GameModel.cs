@@ -30,9 +30,12 @@ public class GameModel
     public Action OnGotoTitle;
     public Action OnStartGame;
     public Action OnFinished;
+    const float DefaultGameTime = 60 * 3f;
+    public float TimeLeft = DefaultGameTime;
     public void GotoTitle()
     {
         _currentGmaePhase = GamgePhase.Title;
+        TimeLeft = DefaultGameTime;
         GameMainObject.Instance.DoFOn();
         if (OnGotoTitle != null)
             OnGotoTitle.Invoke();
@@ -40,6 +43,7 @@ public class GameModel
     public void StartGame()
     {
         _currentGmaePhase = GamgePhase.Game;
+        TimeLeft = DefaultGameTime;
         GameMainObject.Instance.DoFOff();
         if (OnStartGame != null)
             OnStartGame.Invoke();
@@ -47,9 +51,26 @@ public class GameModel
     public void EndGame()
     {
         _currentGmaePhase = GamgePhase.Result;
+        FieldObjectListController.Instance.ResetAllApplicationSpawner();
         GameMainObject.Instance.DoFOn();
         if (OnFinished != null)
             OnFinished.Invoke();
     }
+    public float UpdateTimeLeft()
+    {
+        if(_currentGmaePhase != GamgePhase.Game)
+        {
+            return -1;
+        }
 
+        TimeLeft -= Time.deltaTime;
+
+        if(TimeLeft <= 0)
+        {
+            EndGame();
+            TimeLeft = 0;
+        }
+
+        return TimeLeft;
+    }
 }

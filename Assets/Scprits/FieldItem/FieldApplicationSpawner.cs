@@ -25,8 +25,12 @@ public class FieldApplicationSpawner : SpawnerBase
     }
     public override void OnRequestTurnOff()
     {
-        var destoryType = Switcher.HoldingFieldIcon.ApplicationType;
-        ApplicationPressureManager.Instance.OnApplicationDestory(destoryType);
+        if (Switcher.HoldingFieldIcon != null)
+        {
+            var destoryType = Switcher.HoldingFieldIcon.ApplicationType;
+            ApplicationPressureManager.Instance.OnApplicationDestory(destoryType);
+        }
+        
         base.OnRequestTurnOff();
         Switcher.DestoryIcon();
 

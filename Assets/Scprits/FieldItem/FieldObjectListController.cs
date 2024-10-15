@@ -24,5 +24,9 @@ public class FieldObjectListController : MonoBehaviour
         var index = Random.Range(0, cnt);
         return emptyCtrls[index];
     }
+    public void ResetAllApplicationSpawner()
+    {
+        FieldApplicationSpawners.ForEach(x => x.OnRequestTurnOff());
+    }
 
 }

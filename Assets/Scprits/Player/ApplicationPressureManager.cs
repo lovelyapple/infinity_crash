@@ -43,7 +43,6 @@ public class ApplicationPressureManager : MonoSingletoneBase<ApplicationPressure
 {
     public List<ScorePressureSetting> PressureSettings;
     public List<PressureInfo> CurrentPressures;
-    public List<FieldApplicationSpawner> FieldApplicationSpawners;
     public List<ScoreInfo> ScoreInfos;
 
     public float PressureCrashing = 10000;
@@ -66,7 +65,7 @@ public class ApplicationPressureManager : MonoSingletoneBase<ApplicationPressure
     public void OnGotoTitle()
     {
         IsPlaying = true;
-        CurrentPressures.Clear();
+        CurrentPressures.ForEach(x => { x.Pressure = 0; x.PressureLevel = 0; });
         ScoreInfos.Clear();
     }
     public void OnGameStart()
@@ -77,12 +76,11 @@ public class ApplicationPressureManager : MonoSingletoneBase<ApplicationPressure
     {
         IsPlaying = false;
     }
-
     public void AddPressure(ScoreType scoreType)
     {
         if(!IsPlaying)
         {
-            return;
+            return; 
         }
         var setting = PressureSettings.FirstOrDefault(x => x.ScoreType == scoreType);
 
