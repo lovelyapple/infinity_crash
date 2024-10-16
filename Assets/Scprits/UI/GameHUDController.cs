@@ -14,11 +14,13 @@ public class GameHUDController : MonoBehaviour
     public List<UIApplicationCrashingController> UIApplicationCrashingControllers;
     public List<UIApplicationTrackingController> UIApplicationTrackings;
     public TextMeshProUGUI TimeLeftLabel;
+    public Image[] SpeedRunTimeLeftImages;
 
     public UITitleController TitleController;
     public UICountDownController CountDownController;
     public GameObject InGameHUDObj;
     public UIResultController ResultController;
+    
     void Awake()
     {
         Instance = this;

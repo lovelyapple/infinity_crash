@@ -84,4 +84,8 @@ public class GameModel
             TimeAddedCount++;
         }
     }
+    public void DecreaseTime()
+    {
+        TimeLeft -= 2f;
+    }
 }

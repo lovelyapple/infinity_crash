@@ -11,6 +11,7 @@ TagManager:
   - FieldSkill
   - Damageable
   - Damaging
+  - WaterField
   layers:
   - Default
   - TransparentFX

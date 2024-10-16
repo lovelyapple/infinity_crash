@@ -394,7 +394,16 @@ public class GameCharaConttroller : MonoBehaviour
 
         return IsGrounded;
     }
-    public float JumoBoardPower = 40f;
+    public void OnCollisionEnter(Collision col)
+    {
+        if(col.gameObject.tag == "WaterField")
+        {
+            Jump(15);
+
+            GameModel.Instance.DecreaseTime();
+            ResourceManager.Instance.TurnOnEffect("Fx_WaterJump");
+        }
+    }
     public void OnTriggerEnter(Collider collider)
     {
         if (collider.gameObject.tag == "DangerApplyIcon")
