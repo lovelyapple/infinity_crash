@@ -441,6 +441,7 @@ public class GameCharaConttroller : MonoBehaviour
             var scorePoint = collider.gameObject.GetComponent<ScorePoint>();
             scorePoint.OnTouched();
             ApplicationPressureManager.Instance.AddPressure(scorePoint.ScoreType);
+            UITaskGetFxSpawner.CreateOne(scorePoint.ScoreType);
         }
     }
 
