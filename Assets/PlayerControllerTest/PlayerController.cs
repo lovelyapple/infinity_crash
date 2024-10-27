@@ -9,6 +9,10 @@ using UnityEngine.UI;
 public class PlayerController : MonoBehaviour
 {
     public float GRAVITY;
+    public float MAX_GRAVITY_SPEED;
+    public float GROUND_SLIDE_DEGREE = 45;
+
+
     public float JUMP_POWER;
     public float BODY_SIZE_HALF;
     public float HOR_INPUT_SPPED;
@@ -16,22 +20,24 @@ public class PlayerController : MonoBehaviour
     public float DRAG_VALUE = 0.97f;
     public float MIN_MOVE_POWER = 0.1f;
 
+    const float HIT_CHECK_FLOAT_DISTANCE = 0.05f;
+
+    public GroundTouchState CurrentGroundTouchState;
+
 
     public Vector3 UserInputDicreionLocal;
     public Vector3 CurrentInputMoveLocal;
     public float CurrentMoveSpeed;
-    public Vector3 FinalVelocityWorld;
+    public Vector3 FinalInputVelocityWorld;
     public Vector3 FinalVelocityWorldApply;
 
-    Transform _cmemraTransform;
+    public Vector3 FallVelocityWorldApply;
+
+    public Transform _cmemraTransform;
     public bool AllowRotate;
     float _xRotaition;
     public float MouseSensitivity;
     private bool _isLoackedCursor;
-    void Awake()
-    {
-        _cmemraTransform = Camera.main.transform;
-    }
     // Update is called once per frame
     void Update()
     {
@@ -49,7 +55,7 @@ public class PlayerController : MonoBehaviour
             }
         }
         // 毎回初期化する
-        FinalVelocityWorld = Vector3.zero;
+        FinalInputVelocityWorld = Vector3.zero;
 
 
         ///----- カメラ回転-----///
@@ -73,6 +79,7 @@ public class PlayerController : MonoBehaviour
             }
         }
 
+        CurrentGroundTouchState = CheckGroundTouch();
 
         // Input受付
         if (Input.GetKey(KeyCode.W))
@@ -161,27 +168,47 @@ public class PlayerController : MonoBehaviour
 
         // 自然運動中の摩擦力計算
         // TODO 地面判定
-        if (UserInputDicreionLocal.x == 0 || (UserInputDicreionLocal.x * FinalVelocityWorld.x) < 0)
+        if (UserInputDicreionLocal.x == 0 || (UserInputDicreionLocal.x * FinalInputVelocityWorld.x) < 0)
         {
-            FinalVelocityWorld.x *= DRAG_VALUE;
+            FinalInputVelocityWorld.x *= DRAG_VALUE;
         }
 
-        if (UserInputDicreionLocal.z == 0 || (UserInputDicreionLocal.z * FinalVelocityWorld.z) < 0)
+        if (UserInputDicreionLocal.z == 0 || (UserInputDicreionLocal.z * FinalInputVelocityWorld.z) < 0)
         {
-            FinalVelocityWorld.z *= DRAG_VALUE;
+            FinalInputVelocityWorld.z *= DRAG_VALUE;
         }
 
         // WorldDirecionに変換
         if (CurrentMoveSpeed != 0)
         {
-            FinalVelocityWorld = transform.TransformDirection(CurrentInputMoveLocal);
+            FinalInputVelocityWorld = transform.TransformDirection(CurrentInputMoveLocal);
         }
 
-        FinalVelocityWorldApply = FinalVelocityWorld * Time.deltaTime;
+        FinalVelocityWorldApply = FinalInputVelocityWorld * Time.deltaTime;
 
         if (FinalVelocityWorldApply.x != 0 || FinalVelocityWorldApply.z != 0)
         {
+            FinalVelocityWorldApply.y = 0;
+            var result = GetHitPlaneVect(FinalVelocityWorldApply);
 
+            if(result.HasValue)
+            {
+                FinalVelocityWorldApply = result.Value;
+            }
+        }
+
+        if(CurrentGroundTouchState != GroundTouchState.Touching_2)
+        {
+            FallVelocityWorldApply.y -= (GRAVITY * Time.deltaTime);
+
+            if(FallVelocityWorldApply.y < -MAX_GRAVITY_SPEED)
+            {
+                FallVelocityWorldApply.y = -MAX_GRAVITY_SPEED;
+            }
+        }
+        else
+        {
+            FallVelocityWorldApply.y = 0;
         }
 
         // 反映
@@ -190,58 +217,83 @@ public class PlayerController : MonoBehaviour
             transform.position += FinalVelocityWorldApply;
         }
 
+        if(FallVelocityWorldApply != Vector3.zero)
+        {
+            transform.position += Vector3.up * FallVelocityWorldApply.y * Time.deltaTime;
+        }
+
+        OnEdtiroExecute();
     }
     [ContextMenu("AAAAA")]
     public void OnEdtiroExecute()
     {
-        var (fixDirec, normalDirect, hitPos) = GetHitPlaneVect(transform.forward * 5);
-
-        moveLine.SetPositions(new Vector3[] { transform.position, transform.TransformPoint(Vector3.forward * 5) });
-
-        if (fixDirec.HasValue)
-        {
-            fixLine.SetPositions(new Vector3[] { transform.position, transform.position + fixDirec.Value });
-        }
-        else
-        {
-            fixLine.SetPositions(new Vector3[] { Vector3.zero, Vector3.up });
-        }
-
-        if (normalDirect.HasValue && hitPos.HasValue)
-        {
-            hitNormalLine.SetPositions(new Vector3[] { hitPos.Value, hitPos.Value + normalDirect.Value * 5 });
-        }
-        else
-        {
-            fixLine.SetPositions(new Vector3[] { Vector3.zero, Vector3.up });
-        }
+        GetHitPlaneVect(transform.forward * 5);
     }
-    private (Vector3?, Vector3?, Vector3?) GetHitPlaneVect(Vector3 moveDirection)
+    private Vector3? GetHitPlaneVect(Vector3 moveDirection)
     {
-        const float HIT_CHECK_FLOAT_DISTANCE = 0.05f;
-        moveDistance = Mathf.Sqrt(moveDirection.x * moveDirection.x + moveDirection.z * moveDirection.z);
+        var moveDistance = Mathf.Sqrt(moveDirection.x * moveDirection.x + moveDirection.z * moveDirection.z);
         var direction = new Vector3(moveDirection.x, 0, moveDirection.z).normalized;
         var castDistance = moveDistance + HIT_CHECK_FLOAT_DISTANCE;
         if (Physics.SphereCast(transform.position, BODY_SIZE_HALF, direction, out var hitInfo, castDistance))
         {
             var hitOriginPoint = hitInfo.point + hitInfo.normal * (HIT_CHECK_FLOAT_DISTANCE + BODY_SIZE_HALF);
-            hitCheckMovedDistance = Vector3.Distance(transform.position, hitOriginPoint);
+            hitNormalLine.SetPositions(new Vector3[] { hitOriginPoint, hitOriginPoint + hitInfo.normal * 5 });
+            var horizontalHitMovedDistance = hitInfo.distance - HIT_CHECK_FLOAT_DISTANCE;
+            moveLine.SetPositions(new Vector3[] { transform.position, hitOriginPoint });
 
-            if (hitCheckMovedDistance < moveDistance)
+            // if (hitMovedDistance < moveDistance)
             {
-                var newVelocityWorld = direction * hitCheckMovedDistance;
-                float dotProduct = Vector3.Dot(direction, hitInfo.normal);
-                Vector3 projection = dotProduct * hitInfo.normal;
-                newVelocityWorld += projection * hitCheckMovedDistance;
-                return (newVelocityWorld, hitInfo.normal, hitOriginPoint);
+                var newVelocityWorld = direction * horizontalHitMovedDistance;
+
+                var invertedNormal = -hitInfo.normal;
+                var directionNormalized = direction.normalized;
+                Vector3 projectedDirection = directionNormalized - Vector3.Dot(directionNormalized, invertedNormal) * invertedNormal;
+                var projectedDirectionDistance = moveDistance - horizontalHitMovedDistance;
+
+                newVelocityWorld += projectedDirection * projectedDirectionDistance;
+                fixLine.SetPositions(new Vector3[] { hitOriginPoint, hitOriginPoint + projectedDirection * projectedDirectionDistance });
+                return newVelocityWorld;
             }
         }
 
-        return (null, null, null);
+        return null;
+    }
+    public enum GroundTouchState
+    {
+        Floating,
+        Touching_1,
+        Touching_2,
+    }
+    private GroundTouchState CheckGroundTouch()
+    {
+        var ray = new Ray();
+        ray.origin = transform.position + Vector3.up * HIT_CHECK_FLOAT_DISTANCE;
+        ray.direction = Vector3.down;
+        var dropDistanceNextFrame = -FallVelocityWorldApply.y * Time.deltaTime;
+        var distance = dropDistanceNextFrame + HIT_CHECK_FLOAT_DISTANCE * 2;
+        if (Physics.SphereCast(ray, BODY_SIZE_HALF, out var hitInfo2 , distance))
+        {
+            var angle2 = 90 - Vector3.Angle(Vector3.up, hitInfo2.normal);
+
+            if (angle2 > GROUND_SLIDE_DEGREE)
+            {
+                var invertHitNormalNormalized = -hitInfo2.normal;
+                var hitOriginPoint = hitInfo2.point + hitInfo2.normal * (HIT_CHECK_FLOAT_DISTANCE + BODY_SIZE_HALF);
+                var hitDistance = Vector3.Distance(hitInfo2.point, transform.position);
+                var projectedDirection = Vector3.down - Vector3.Dot(Vector3.down, invertHitNormalNormalized) * invertHitNormalNormalized;
+            }
+            return GroundTouchState.Touching_2;
+        }
+
+        if (Physics.SphereCast(ray, BODY_SIZE_HALF, out var hitInfo1, distance * 1.2f))
+        {
+            return GroundTouchState.Touching_1;
+        }
+
+        return GroundTouchState.Floating;
+
     }
     public LineRenderer moveLine;
     public LineRenderer fixLine;
     public LineRenderer hitNormalLine;
-    public float moveDistance;
-    public float hitCheckMovedDistance;
 }
