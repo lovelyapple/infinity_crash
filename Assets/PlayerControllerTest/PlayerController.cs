@@ -8,6 +8,13 @@ using UnityEngine;
 using UnityEngine.UI;
 public class PlayerController : MonoBehaviour
 {
+    public enum GroundTouchState
+    {
+        Floating,
+        Touching_1,
+        Touching_2,
+        Touching_2_sliding,
+    }
     public float GRAVITY;
     public float MAX_GRAVITY_SPEED;
     public float GROUND_SLIDE_DEGREE = 45;
@@ -38,6 +45,10 @@ public class PlayerController : MonoBehaviour
     float _xRotaition;
     public float MouseSensitivity;
     private bool _isLoackedCursor;
+    public float FootGroundAngle = 0;
+    public LineRenderer moveLine;
+    public LineRenderer fixLine;
+    public LineRenderer hitNormalLine;
     // Update is called once per frame
     void Update()
     {
@@ -78,8 +89,6 @@ public class PlayerController : MonoBehaviour
                 transform.Rotate(Vector3.up * mouseX);
             }
         }
-
-        CurrentGroundTouchState = CheckGroundTouch();
 
         // Input受付
         if (Input.GetKey(KeyCode.W))
@@ -197,19 +206,7 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        if(CurrentGroundTouchState != GroundTouchState.Touching_2)
-        {
-            FallVelocityWorldApply.y -= (GRAVITY * Time.deltaTime);
-
-            if(FallVelocityWorldApply.y < -MAX_GRAVITY_SPEED)
-            {
-                FallVelocityWorldApply.y = -MAX_GRAVITY_SPEED;
-            }
-        }
-        else
-        {
-            FallVelocityWorldApply.y = 0;
-        }
+        CurrentGroundTouchState = CheckGroundTouch();
 
         // 反映
         if (FinalVelocityWorldApply.x != 0 || FinalVelocityWorldApply.y != 0 || FinalVelocityWorldApply.z != 0)
@@ -219,7 +216,8 @@ public class PlayerController : MonoBehaviour
 
         if(FallVelocityWorldApply != Vector3.zero)
         {
-            transform.position += Vector3.up * FallVelocityWorldApply.y * Time.deltaTime;
+            var fallVelocityFinal = FallVelocityWorldApply;
+            transform.position += fallVelocityFinal * Time.deltaTime;
         }
 
         OnEdtiroExecute();
@@ -258,42 +256,53 @@ public class PlayerController : MonoBehaviour
 
         return null;
     }
-    public enum GroundTouchState
-    {
-        Floating,
-        Touching_1,
-        Touching_2,
-    }
+
     private GroundTouchState CheckGroundTouch()
     {
-        var ray = new Ray();
-        ray.origin = transform.position + Vector3.up * HIT_CHECK_FLOAT_DISTANCE;
-        ray.direction = Vector3.down;
-        var dropDistanceNextFrame = -FallVelocityWorldApply.y * Time.deltaTime;
-        var distance = dropDistanceNextFrame + HIT_CHECK_FLOAT_DISTANCE * 2;
-        if (Physics.SphereCast(ray, BODY_SIZE_HALF, out var hitInfo2 , distance))
-        {
-            var angle2 = 90 - Vector3.Angle(Vector3.up, hitInfo2.normal);
+        FootGroundAngle = 0;
+        var gravityVelocity = GRAVITY * Time.deltaTime;
+        var dropDistanceNextFrame = Mathf.Min(-FallVelocityWorldApply.y + gravityVelocity, MAX_GRAVITY_SPEED) * Time.deltaTime;
+        var dropRay = new Ray() { origin = transform.position, direction = Vector3.down };
 
-            if (angle2 > GROUND_SLIDE_DEGREE)
+        var groundTouchState = GroundTouchState.Floating;
+
+        var distance = dropDistanceNextFrame + HIT_CHECK_FLOAT_DISTANCE;
+        if (Physics.SphereCast(dropRay, BODY_SIZE_HALF, out var hitInfo2 , distance))
+        {
+            groundTouchState = GroundTouchState.Touching_2;
+            FootGroundAngle = Vector3.Angle(Vector3.up, hitInfo2.normal);
+
+            if (FootGroundAngle > GROUND_SLIDE_DEGREE)
             {
                 var invertHitNormalNormalized = -hitInfo2.normal;
                 var hitOriginPoint = hitInfo2.point + hitInfo2.normal * (HIT_CHECK_FLOAT_DISTANCE + BODY_SIZE_HALF);
-                var hitDistance = Vector3.Distance(hitInfo2.point, transform.position);
+                var hitDistance = Vector3.Distance(hitOriginPoint, transform.position);
+                var newFallDirection = new Vector3(FallVelocityWorldApply.x, -1 * hitDistance, FallVelocityWorldApply.z);
+                var slipDistance = gravityVelocity - hitDistance;
                 var projectedDirection = Vector3.down - Vector3.Dot(Vector3.down, invertHitNormalNormalized) * invertHitNormalNormalized;
+                newFallDirection += projectedDirection * slipDistance;
+                FallVelocityWorldApply = newFallDirection;
+
+                fixLine.SetPositions(new Vector3[] { hitOriginPoint, hitOriginPoint + projectedDirection * slipDistance });
+                groundTouchState = GroundTouchState.Touching_2_sliding;
             }
-            return GroundTouchState.Touching_2;
         }
 
-        if (Physics.SphereCast(ray, BODY_SIZE_HALF, out var hitInfo1, distance * 1.2f))
+
+        if (Physics.SphereCast(dropRay, BODY_SIZE_HALF, out var hitInfo1, distance * 1.2f))
         {
-            return GroundTouchState.Touching_1;
+            groundTouchState = GroundTouchState.Touching_1;
         }
 
-        return GroundTouchState.Floating;
+        if (groundTouchState == GroundTouchState.Floating)
+        {
+            FallVelocityWorldApply.y -= gravityVelocity;
+        }
+        else if(groundTouchState != GroundTouchState.Touching_2_sliding)
+        {
+            FallVelocityWorldApply = Vector3.zero;
+        }
 
+        return groundTouchState;
     }
-    public LineRenderer moveLine;
-    public LineRenderer fixLine;
-    public LineRenderer hitNormalLine;
 }
