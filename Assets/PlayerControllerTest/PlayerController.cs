@@ -15,9 +15,12 @@ public class PlayerController : MonoBehaviour
         Touching_2,
         Touching_2_sliding,
     }
-    public float GRAVITY;
+    public float FALL_GRAVITY;
+    public float JUMP_GRAVITY;
     public float MAX_GRAVITY_SPEED;
     public float GROUND_SLIDE_DEGREE = 45;
+
+    public float HEAD_SLIDE_DEEGREE = 75;
 
 
     public float JUMP_POWER;
@@ -30,15 +33,17 @@ public class PlayerController : MonoBehaviour
     const float HIT_CHECK_FLOAT_DISTANCE = 0.05f;
 
     public GroundTouchState CurrentGroundTouchState;
-
+    private bool _canJump => CurrentGroundTouchState >= GroundTouchState.Touching_1;
 
     public Vector3 UserInputDicreionLocal;
     public Vector3 CurrentInputMoveLocal;
     public float CurrentMoveSpeed;
     public Vector3 FinalInputVelocityWorld;
     public Vector3 FinalVelocityWorldApply;
-
     public Vector3 FallVelocityWorldApply;
+
+    public Vector3 JumpVelocityWorldApply;
+    public bool IsJumping;
 
     public Transform _cmemraTransform;
     public bool AllowRotate;
@@ -84,7 +89,7 @@ public class PlayerController : MonoBehaviour
                 _xRotaition = Mathf.Clamp(_xRotaition, -90f, 90f);  // 上下の視点回転を90度までに制限
 
                 // カメラの回転を上下方向（X軸）に適用
-                // _cmemraTransform.localRotation = Quaternion.Euler(_xRotaition, 0f, 0f);
+                _cmemraTransform.localRotation = Quaternion.Euler(_xRotaition, 0f, 0f);
                 // プレイヤーの体の回転を左右方向（Y軸）に適用
                 transform.Rotate(Vector3.up * mouseX);
             }
@@ -207,6 +212,16 @@ public class PlayerController : MonoBehaviour
         }
 
         CurrentGroundTouchState = CheckGroundTouch();
+        CheckJumpTouch();
+
+        if (_canJump)
+        {
+            if(Input.GetKeyDown(KeyCode.Space))
+            {
+                JumpVelocityWorldApply.y += JUMP_POWER;
+                IsJumping = true;
+            }
+        }
 
         // 反映
         if (FinalVelocityWorldApply.x != 0 || FinalVelocityWorldApply.y != 0 || FinalVelocityWorldApply.z != 0)
@@ -216,8 +231,12 @@ public class PlayerController : MonoBehaviour
 
         if(FallVelocityWorldApply != Vector3.zero)
         {
-            var fallVelocityFinal = FallVelocityWorldApply;
-            transform.position += fallVelocityFinal * Time.deltaTime;
+            transform.position += FallVelocityWorldApply * Time.deltaTime;
+        }
+
+        if(JumpVelocityWorldApply != Vector3.zero)
+        {
+            transform.position += JumpVelocityWorldApply * Time.deltaTime;
         }
 
         OnEdtiroExecute();
@@ -259,10 +278,14 @@ public class PlayerController : MonoBehaviour
 
     private GroundTouchState CheckGroundTouch()
     {
-        FootGroundAngle = 0;
-        var gravityVelocity = GRAVITY * Time.deltaTime;
+        if(IsJumping)
+        {
+            return GroundTouchState.Floating;
+        }
+
+        var gravityVelocity = FALL_GRAVITY * Time.deltaTime;
         var dropDistanceNextFrame = Mathf.Min(-FallVelocityWorldApply.y + gravityVelocity, MAX_GRAVITY_SPEED) * Time.deltaTime;
-        var dropRay = new Ray() { origin = transform.position, direction = Vector3.down };
+        var dropRay = new Ray() { origin = transform.position + Vector3.up * 0.001f, direction = Vector3.down };
 
         var groundTouchState = GroundTouchState.Floating;
 
@@ -286,23 +309,63 @@ public class PlayerController : MonoBehaviour
                 fixLine.SetPositions(new Vector3[] { hitOriginPoint, hitOriginPoint + projectedDirection * slipDistance });
                 groundTouchState = GroundTouchState.Touching_2_sliding;
             }
+            else
+            {
+                FallVelocityWorldApply = Vector3.zero;
+            }
         }
-
-
-        if (Physics.SphereCast(dropRay, BODY_SIZE_HALF, out var hitInfo1, distance * 1.2f))
+        else if (Physics.SphereCast(dropRay, BODY_SIZE_HALF, out var hitInfo1, distance * 1.2f))
         {
             groundTouchState = GroundTouchState.Touching_1;
         }
-
-        if (groundTouchState == GroundTouchState.Floating)
+        else
         {
             FallVelocityWorldApply.y -= gravityVelocity;
-        }
-        else if(groundTouchState != GroundTouchState.Touching_2_sliding)
-        {
-            FallVelocityWorldApply = Vector3.zero;
         }
 
         return groundTouchState;
     }
+    private void CheckJumpTouch()
+    {
+        if(!IsJumping)
+        {
+            return;
+        }
+
+        JumpVelocityWorldApply.y -= JUMP_GRAVITY * Time.deltaTime;
+
+        if (JumpVelocityWorldApply.y < 0)
+        {
+            IsJumping = false;
+            JumpVelocityWorldApply = Vector3.zero;
+            // ここ1フレームのJump失いがある
+            return;
+        }
+
+        var jumpRay = new Ray() { origin = transform.position, direction = Vector3.up };
+        var jumpDistanceNextFrame = JumpVelocityWorldApply.y * Time.deltaTime;
+        var rayDistance = jumpDistanceNextFrame + HIT_CHECK_FLOAT_DISTANCE;
+
+        if (Physics.SphereCast(jumpRay, BODY_SIZE_HALF, out var hitInfo, rayDistance))
+        {
+            headGroundAngle = Vector3.Angle(Vector3.down, hitInfo.normal);
+
+            if (headGroundAngle > HEAD_SLIDE_DEEGREE)
+            {
+                var invertHitNormalNormalized = -hitInfo.normal;
+                var hitOriginPoint = hitInfo.point + hitInfo.normal * (HIT_CHECK_FLOAT_DISTANCE + BODY_SIZE_HALF);
+                var hitDistance = Vector3.Distance(hitOriginPoint, transform.position);
+                var newJumpDirection = new Vector3(JumpVelocityWorldApply.x, hitDistance, JumpVelocityWorldApply.z);
+                var slipDistance = jumpDistanceNextFrame - hitDistance;
+                var projectedDirection = Vector3.up - Vector3.Dot(Vector3.up, invertHitNormalNormalized) * invertHitNormalNormalized;
+                newJumpDirection += projectedDirection * slipDistance;
+                JumpVelocityWorldApply = newJumpDirection;
+            }
+            else
+            {
+                JumpVelocityWorldApply.y = 0;
+            }
+        }
+    }
+    public float headGroundAngle;
 }
