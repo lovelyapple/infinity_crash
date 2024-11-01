@@ -2,10 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3ab074e0-d06f-4f6d-a9ab-a395a2338e51" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/Assets/Resources/JMO Assets/Cartoon FX FREE (old legacy effects).unitypackage.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/Initialize.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/Initialize.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scprits/Player/GameCharaConttroller.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scprits/Player/GameCharaConttroller.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/Packages/com.unity.probuilder/Settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/Packages/com.unity.probuilder/Settings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.infinity_crash/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.infinity_crash/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/PlayerControllerTest/PlayerController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/PlayerControllerTest/PlayerController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/PlayerTest.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/PlayerTest.unity" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -13,6 +12,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/f7237cf7abef49bfbb552d7eb076e422174200/ff/5dcd8948/Object.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/Scprits/FX/ParticleSystemAutoDestory.cs" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MarkdownSettingsMigration">
@@ -66,10 +66,10 @@
       </option>
       <method v="2" />
     </configuration>
-    <configuration name="Attach to Unity Editor" type="UNITY_DEBUG_RUN_CONFIGURATION" factoryName="Unity Debug" show_console_on_std_err="false" show_console_on_std_out="false" port="50000" address="localhost" ignored-value-for-modified-check="26748">
+    <configuration name="Attach to Unity Editor" type="UNITY_DEBUG_RUN_CONFIGURATION" factoryName="Unity Debug" show_console_on_std_err="false" show_console_on_std_out="false" port="50000" address="localhost" ignored-value-for-modified-check="27428">
       <option name="allowRunningInParallel" value="false" />
       <option name="listenPortForConnections" value="false" />
-      <option name="pid" value="26748" />
+      <option name="pid" value="27428" />
       <option name="projectPathOnTarget" />
       <option name="selectedOptions">
         <list />
@@ -87,6 +87,7 @@
       <updated>1728394287799</updated>
       <workItem from="1728394289659" duration="996000" />
       <workItem from="1729135942379" duration="1982000" />
+      <workItem from="1730432497806" duration="12340000" />
     </task>
     <servers />
   </component>
@@ -97,24 +98,5 @@
   <component name="UnityUnitTestConfiguration" currentTestLauncher="EditMode" />
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="DotNet Breakpoints">
-          <url>file://$PROJECT_DIR$/Assets/Scprits/UI/UITaskGetFxSpawner.cs</url>
-          <line>18</line>
-          <properties documentPath="C:\projects\infinity_crash\Assets\Scprits\UI\UITaskGetFxSpawner.cs" initialLine="18" containingFunctionPresentation="method 'Awake'">
-            <startOffsets>
-              <option value="654" />
-            </startOffsets>
-            <endOffsets>
-              <option value="950" />
-            </endOffsets>
-          </properties>
-          <option name="timeStamp" value="4" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
 </project>

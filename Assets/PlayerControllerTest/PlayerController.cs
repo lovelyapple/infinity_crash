@@ -57,7 +57,7 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.LeftCommand))
+        if (Input.GetKeyDown(KeyCode.LeftShift))
         {
             if (!_isLoackedCursor)
             {
@@ -89,9 +89,9 @@ public class PlayerController : MonoBehaviour
                 _xRotaition = Mathf.Clamp(_xRotaition, -90f, 90f);  // 上下の視点回転を90度までに制限
 
                 // カメラの回転を上下方向（X軸）に適用
-                _cmemraTransform.localRotation = Quaternion.Euler(_xRotaition, 0f, 0f);
-                // プレイヤーの体の回転を左右方向（Y軸）に適用
-                transform.Rotate(Vector3.up * mouseX);
+                // _cmemraTransform.localRotation = Quaternion.Euler(_xRotaition, 0f, 0f);
+                // // プレイヤーの体の回転を左右方向（Y軸）に適用
+                // transform.Rotate(Vector3.up * mouseX);
             }
         }
 
@@ -203,48 +203,55 @@ public class PlayerController : MonoBehaviour
         if (FinalVelocityWorldApply.x != 0 || FinalVelocityWorldApply.z != 0)
         {
             FinalVelocityWorldApply.y = 0;
-            var result = GetHitPlaneVect(FinalVelocityWorldApply);
-
-            if(result.HasValue)
-            {
-                FinalVelocityWorldApply = result.Value;
-            }
-        }
-
-        CurrentGroundTouchState = CheckGroundTouch();
-        CheckJumpTouch();
-
-        if (_canJump)
-        {
-            if(Input.GetKeyDown(KeyCode.Space))
-            {
-                JumpVelocityWorldApply.y += JUMP_POWER;
-                IsJumping = true;
-            }
-        }
-
-        // 反映
-        if (FinalVelocityWorldApply.x != 0 || FinalVelocityWorldApply.y != 0 || FinalVelocityWorldApply.z != 0)
-        {
+            FinalVelocityWorldApply = MoveAlongWall(FinalVelocityWorldApply);
+            // FinalVelocityWorldApply = MoveAlongWall(FinalVelocityWorldApply);
             transform.position += FinalVelocityWorldApply;
+            // var result = GetHitPlaneVect(FinalVelocityWorldApply);
+            //
+            // if(result.HasValue)
+            // {
+            //     FinalVelocityWorldApply = result.Value;
+            // }
         }
 
-        if(FallVelocityWorldApply != Vector3.zero)
-        {
-            transform.position += FallVelocityWorldApply * Time.deltaTime;
-        }
+        // CurrentGroundTouchState = CheckGroundTouch();
+        // CheckJumpTouch();
+        //
+        // if (_canJump)
+        // {
+        //     if(Input.GetKeyDown(KeyCode.Space))
+        //     {
+        //         JumpVelocityWorldApply.y += JUMP_POWER;
+        //         IsJumping = true;
+        //     }
+        // }
+        //
+        // // 反映
+        // if (FinalVelocityWorldApply.x != 0 || FinalVelocityWorldApply.y != 0 || FinalVelocityWorldApply.z != 0)
+        // {
+        //     transform.position += FinalVelocityWorldApply;
+        // }
+        //
+        // if(FallVelocityWorldApply != Vector3.zero)
+        // {
+        //     transform.position += FallVelocityWorldApply * Time.deltaTime;
+        // }
+        //
+        // if(JumpVelocityWorldApply != Vector3.zero)
+        // {
+        //     transform.position += JumpVelocityWorldApply * Time.deltaTime;
+        // }
 
-        if(JumpVelocityWorldApply != Vector3.zero)
-        {
-            transform.position += JumpVelocityWorldApply * Time.deltaTime;
-        }
-
-        OnEdtiroExecute();
+        // OnEdtiroExecute();
     }
     [ContextMenu("AAAAA")]
     public void OnEdtiroExecute()
     {
-        GetHitPlaneVect(transform.forward * 5);
+        var ray = new Ray() { origin = transform.position, direction = transform.forward };
+        if (Physics.SphereCast(ray, BODY_SIZE_HALF, out var hit))
+        {
+            moveLine.SetPositions(new Vector3[] { hit.point, hit.point + -ray.direction * hit.distance});
+        }
     }
     private Vector3? GetHitPlaneVect(Vector3 moveDirection)
     {
@@ -254,9 +261,9 @@ public class PlayerController : MonoBehaviour
         if (Physics.SphereCast(transform.position, BODY_SIZE_HALF, direction, out var hitInfo, castDistance))
         {
             var hitOriginPoint = hitInfo.point + hitInfo.normal * (HIT_CHECK_FLOAT_DISTANCE + BODY_SIZE_HALF);
-            hitNormalLine.SetPositions(new Vector3[] { hitOriginPoint, hitOriginPoint + hitInfo.normal * 5 });
+            // hitNormalLine.SetPositions(new Vector3[] { hitOriginPoint, hitOriginPoint + hitInfo.normal * 5 });
             var horizontalHitMovedDistance = hitInfo.distance - HIT_CHECK_FLOAT_DISTANCE;
-            moveLine.SetPositions(new Vector3[] { transform.position, hitOriginPoint });
+            // moveLine.SetPositions(new Vector3[] { transform.position, hitOriginPoint });
 
             // if (hitMovedDistance < moveDistance)
             {
@@ -268,12 +275,70 @@ public class PlayerController : MonoBehaviour
                 var projectedDirectionDistance = moveDistance - horizontalHitMovedDistance;
 
                 newVelocityWorld += projectedDirection * projectedDirectionDistance;
-                fixLine.SetPositions(new Vector3[] { hitOriginPoint, hitOriginPoint + projectedDirection * projectedDirectionDistance });
+                // fixLine.SetPositions(new Vector3[] { hitOriginPoint, hitOriginPoint + projectedDirection * projectedDirectionDistance });
                 return newVelocityWorld;
             }
         }
 
         return null;
+    }
+    // public Vector3 MoveAlongWall(Vector3 move)
+    // {
+    //     var curPos = transform.position;
+    //     var requestMoveDistance = move.magnitude;
+    //     var requestMoveDirNormalized = move.normalized;
+    //     var ray = new Ray() { origin = curPos, direction = requestMoveDirNormalized };
+    //
+    //     if (Physics.SphereCast(ray, BODY_SIZE_HALF, out var hit, requestMoveDistance + HIT_CHECK_FLOAT_DISTANCE))
+    //     {
+    //         Vector3 wallNormal = hit.normal;
+    //         Vector3 slideDirection = Vector3.ProjectOnPlane(requestMoveDirNormalized, wallNormal).normalized;
+    //
+    //         var movedDistance = hit.distance - HIT_CHECK_FLOAT_DISTANCE;
+    //         var slideDistance = requestMoveDistance - (hit.distance - HIT_CHECK_FLOAT_DISTANCE);
+    //
+    //         return requestMoveDirNormalized * movedDistance + slideDirection * slideDistance;
+    //     }
+    //
+    //     return move;
+    // }
+    public Vector3 MoveAlongWall(Vector3 move)
+    {
+        var curPos = transform.position;
+        var requestMoveDistance = move.magnitude;
+        var requestMoveDirNormalized = move.normalized;
+        var remainingMove = move;
+
+        // 最大2回までの衝突判定で安定性を向上
+        for (int i = 0; i < 2; i++)
+        {
+            var ray = new Ray(curPos, requestMoveDirNormalized);
+        
+            if (Physics.SphereCast(ray, BODY_SIZE_HALF, out var hit, requestMoveDistance + HIT_CHECK_FLOAT_DISTANCE))
+            {
+                Vector3 wallNormal = hit.normal;
+                Vector3 slideDirection = Vector3.ProjectOnPlane(requestMoveDirNormalized, wallNormal).normalized;
+
+                // 衝突距離を計算し、移動分から衝突分を差し引く
+                var movedDistance = hit.distance - HIT_CHECK_FLOAT_DISTANCE;
+                curPos += requestMoveDirNormalized * movedDistance;
+
+                // 残りのスライド距離を更新
+                requestMoveDistance -= movedDistance;
+                remainingMove = slideDirection * requestMoveDistance;
+            
+                // スライド方向を更新して再試行
+                requestMoveDirNormalized = slideDirection;
+            }
+            else
+            {
+                curPos += remainingMove;
+                break;
+            }
+        }
+
+        // 実際に移動した新しい位置との差分を返す
+        return curPos - transform.position;
     }
 
     private GroundTouchState CheckGroundTouch()
@@ -282,6 +347,10 @@ public class PlayerController : MonoBehaviour
         {
             return GroundTouchState.Floating;
         }
+        
+        // moveLine.SetPositions(new Vector3[] { curPos, wallHitOriginPos});
+        // hitNormalLine.SetPositions(new Vector3[] { wallHitOriginPos, hit.point + hit.normal * 5});
+        // fixLine.SetPositions(new Vector3[] { wallHitOriginPos, wallHitOriginPos + slideDirection * 5});
 
         var gravityVelocity = FALL_GRAVITY * Time.deltaTime;
         var dropDistanceNextFrame = Mathf.Min(-FallVelocityWorldApply.y + gravityVelocity, MAX_GRAVITY_SPEED) * Time.deltaTime;
