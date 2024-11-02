@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO.Compression;
+using System.Linq;
 using TreeEditor;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -202,7 +203,6 @@ public class PlayerController : MonoBehaviour
 
         if (FinalVelocityWorldApply.x != 0 || FinalVelocityWorldApply.z != 0)
         {
-            FinalVelocityWorldApply.y = 0;
             FinalVelocityWorldApply = MoveAlongWall(FinalVelocityWorldApply);
             // FinalVelocityWorldApply = MoveAlongWall(FinalVelocityWorldApply);
             transform.position += FinalVelocityWorldApply;
@@ -282,64 +282,95 @@ public class PlayerController : MonoBehaviour
 
         return null;
     }
+
+    public Vector3 MoveAlongWall(Vector3 move)
+    {
+        var curPos = transform.position;
+        var requestMoveDistance = move.magnitude;
+        var requestMoveDirNormalized = move.normalized;
+        move.y = -0.001f;
+
+        // SphereCastAllで衝突するすべての壁を取得dw
+        var hits = Physics.SphereCastAll(new Ray(curPos, requestMoveDirNormalized), BODY_SIZE_HALF, requestMoveDistance + HIT_CHECK_FLOAT_DISTANCE);
+
+        if (hits.Length == 0)
+        {
+            // 衝突がなければ通常の移動を返す
+            return move;
+        }
+
+        Vector3 slideDirection = requestMoveDirNormalized;
+        Vector3 intersectionDirection = Vector3.zero;
+
+        if (hits.Length >= 3)
+        {
+            // 3つ以上の壁にヒットしている場合、完全に動けないと判定してゼロ移動
+            return Vector3.zero;
+        }
+        else if (hits.Length == 2)
+        {
+            // 最初の2つの壁法線を取得
+            Vector3 normal1 = hits[0].normal;
+            Vector3 normal2 = hits[1].normal;
+
+            // 法線の向きに基づいて水平面と斜面を判別
+            bool isGround1 = hits[0].point == Vector3.zero;
+            bool isGround2 = hits[1].point == Vector3.zero;
+
+            if (isGround1 || isGround2)
+            {
+                // 斜面の法線を取得
+                Vector3 slopeNormal = isGround1 ? normal2 : normal1;
+
+                // 斜面の法線に基づいてスライド方向を決定し、さらに地面と平行にする
+                Vector3 tempSlideDirection = Vector3.ProjectOnPlane(requestMoveDirNormalized, slopeNormal).normalized;
+                slideDirection = Vector3.ProjectOnPlane(tempSlideDirection, Vector3.up).normalized;
+            }
+            else
+            {
+                // 2つの壁がどちらも垂直面の場合、交差方向でスライド
+                intersectionDirection = Vector3.Cross(normal1, normal2).normalized;
+                slideDirection = Vector3.Project(requestMoveDirNormalized, intersectionDirection).normalized;
+            }
+
+            var hit = hits.OrderBy(x => x.distance).First();
+            var movedDistance = hit.distance - HIT_CHECK_FLOAT_DISTANCE;
+            var slideDistance = requestMoveDistance - (hit.distance - HIT_CHECK_FLOAT_DISTANCE);
+            return requestMoveDirNormalized * movedDistance + slideDirection * slideDistance;
+        }
+        else
+        {
+            // 壁が1つだけの場合、その法線に基づいてスライド方向を決定
+            var hit = hits[0];
+            slideDirection = Vector3.ProjectOnPlane(requestMoveDirNormalized, hit.normal).normalized;
+            var movedDistance = hit.distance - HIT_CHECK_FLOAT_DISTANCE;
+            var slideDistance = requestMoveDistance - (hit.distance - HIT_CHECK_FLOAT_DISTANCE);
+
+            return requestMoveDirNormalized * movedDistance + slideDirection * slideDistance;
+        }
+    }
     // public Vector3 MoveAlongWall(Vector3 move)
     // {
     //     var curPos = transform.position;
     //     var requestMoveDistance = move.magnitude;
     //     var requestMoveDirNormalized = move.normalized;
     //     var ray = new Ray() { origin = curPos, direction = requestMoveDirNormalized };
-    //
+    
     //     if (Physics.SphereCast(ray, BODY_SIZE_HALF, out var hit, requestMoveDistance + HIT_CHECK_FLOAT_DISTANCE))
     //     {
     //         Vector3 wallNormal = hit.normal;
     //         Vector3 slideDirection = Vector3.ProjectOnPlane(requestMoveDirNormalized, wallNormal).normalized;
-    //
+    
     //         var movedDistance = hit.distance - HIT_CHECK_FLOAT_DISTANCE;
     //         var slideDistance = requestMoveDistance - (hit.distance - HIT_CHECK_FLOAT_DISTANCE);
-    //
+    
     //         return requestMoveDirNormalized * movedDistance + slideDirection * slideDistance;
     //     }
-    //
+    
     //     return move;
     // }
-    public Vector3 MoveAlongWall(Vector3 move)
-    {
-        var curPos = transform.position;
-        var requestMoveDistance = move.magnitude;
-        var requestMoveDirNormalized = move.normalized;
-        var remainingMove = move;
 
-        // 最大2回までの衝突判定で安定性を向上
-        for (int i = 0; i < 2; i++)
-        {
-            var ray = new Ray(curPos, requestMoveDirNormalized);
-        
-            if (Physics.SphereCast(ray, BODY_SIZE_HALF, out var hit, requestMoveDistance + HIT_CHECK_FLOAT_DISTANCE))
-            {
-                Vector3 wallNormal = hit.normal;
-                Vector3 slideDirection = Vector3.ProjectOnPlane(requestMoveDirNormalized, wallNormal).normalized;
 
-                // 衝突距離を計算し、移動分から衝突分を差し引く
-                var movedDistance = hit.distance - HIT_CHECK_FLOAT_DISTANCE;
-                curPos += requestMoveDirNormalized * movedDistance;
-
-                // 残りのスライド距離を更新
-                requestMoveDistance -= movedDistance;
-                remainingMove = slideDirection * requestMoveDistance;
-            
-                // スライド方向を更新して再試行
-                requestMoveDirNormalized = slideDirection;
-            }
-            else
-            {
-                curPos += remainingMove;
-                break;
-            }
-        }
-
-        // 実際に移動した新しい位置との差分を返す
-        return curPos - transform.position;
-    }
 
     private GroundTouchState CheckGroundTouch()
     {
