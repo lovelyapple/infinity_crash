@@ -58,6 +58,13 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (Physics.Raycast(transform.position, transform.forward, out var hit, maxDistance: 100))
+        {
+            frontDistance = hit.distance;
+            hitNormalLine.SetPositions(new Vector3[] { hit.point, hit.point + hit.normal * 3f });
+            moveLine.SetPositions(new Vector3[]{transform.position, transform.position + transform.forward * hit.distance});
+        }
+
         if (Input.GetKeyDown(KeyCode.LeftShift))
         {
             if (!_isLoackedCursor)
@@ -288,7 +295,6 @@ public class PlayerController : MonoBehaviour
         var curPos = transform.position;
         var requestMoveDistance = move.magnitude;
         var requestMoveDirNormalized = move.normalized;
-        move.y = -0.001f;
 
         // SphereCastAllで衝突するすべての壁を取得dw
         var hits = Physics.SphereCastAll(new Ray(curPos, requestMoveDirNormalized), BODY_SIZE_HALF, requestMoveDistance + HIT_CHECK_FLOAT_DISTANCE);
@@ -301,6 +307,13 @@ public class PlayerController : MonoBehaviour
 
         Vector3 slideDirection = requestMoveDirNormalized;
         Vector3 intersectionDirection = Vector3.zero;
+        hits = hits.Where(x => x.point != Vector3.zero).ToArray();
+
+        if (hits.Length == 0)
+        {
+            // 衝突がなければ通常の移動を返す
+            return move;
+        }
 
         if (hits.Length >= 3)
         {
@@ -319,24 +332,28 @@ public class PlayerController : MonoBehaviour
 
             if (isGround1 || isGround2)
             {
-                // 斜面の法線を取得
-                Vector3 slopeNormal = isGround1 ? normal2 : normal1;
 
-                // 斜面の法線に基づいてスライド方向を決定し、さらに地面と平行にする
-                Vector3 tempSlideDirection = Vector3.ProjectOnPlane(requestMoveDirNormalized, slopeNormal).normalized;
-                slideDirection = Vector3.ProjectOnPlane(tempSlideDirection, Vector3.up).normalized;
+                // 斜面の法線を取得
+                var normalHit = isGround1 ? hits[1] : hits[0];
+                // 2つの壁がどちらも垂直面の場合、交差方向でスライド
+                intersectionDirection = Vector3.Cross(normalHit.normal, Vector3.up).normalized;
+                slideDirection = Vector3.Project(requestMoveDirNormalized, intersectionDirection).normalized;
+
+                var hit = normalHit;
+                var slideDistance = (hit.distance - HIT_CHECK_FLOAT_DISTANCE);
+                return slideDirection * slideDistance;
             }
             else
             {
                 // 2つの壁がどちらも垂直面の場合、交差方向でスライド
                 intersectionDirection = Vector3.Cross(normal1, normal2).normalized;
                 slideDirection = Vector3.Project(requestMoveDirNormalized, intersectionDirection).normalized;
-            }
 
-            var hit = hits.OrderBy(x => x.distance).First();
-            var movedDistance = hit.distance - HIT_CHECK_FLOAT_DISTANCE;
-            var slideDistance = requestMoveDistance - (hit.distance - HIT_CHECK_FLOAT_DISTANCE);
-            return requestMoveDirNormalized * movedDistance + slideDirection * slideDistance;
+                var hit = hits.OrderBy(x => x.distance).First();
+                var movedDistance = hit.distance - HIT_CHECK_FLOAT_DISTANCE;
+                var slideDistance = requestMoveDistance - (hit.distance - HIT_CHECK_FLOAT_DISTANCE);
+                return requestMoveDirNormalized * movedDistance + slideDirection * slideDistance;
+            }
         }
         else
         {
@@ -344,11 +361,37 @@ public class PlayerController : MonoBehaviour
             var hit = hits[0];
             slideDirection = Vector3.ProjectOnPlane(requestMoveDirNormalized, hit.normal).normalized;
             var movedDistance = hit.distance - HIT_CHECK_FLOAT_DISTANCE;
-            var slideDistance = requestMoveDistance - (hit.distance - HIT_CHECK_FLOAT_DISTANCE);
+            var slideDistance = requestMoveDistance - movedDistance;
 
-            return requestMoveDirNormalized * movedDistance + slideDirection * slideDistance;
+            var requestMove = requestMoveDirNormalized * movedDistance + slideDirection * slideDistance;
+
+            var newHits = Physics.SphereCastAll(new Ray(curPos, requestMove.normalized), BODY_SIZE_HALF, requestMove.magnitude )
+                .OrderBy(x => x.distance).ToArray();
+
+            if (newHits.Length >= 3 || newHits.Any(x => x.point == Vector3.zero))
+            {
+                // もう面倒いので、計算したくない
+                return requestMoveDirNormalized * movedDistance;
+            }
+
+            var newHit = newHits.FirstOrDefault(x => x.transform != hit.transform);
+
+            if (newHit.transform != null)
+            {
+                // 2つの壁がどちらも垂直面の場合、交差方向でスライド
+                intersectionDirection = Vector3.Cross(hit.normal, newHit.normal).normalized;
+                slideDirection = Vector3.Project(requestMoveDirNormalized, intersectionDirection).normalized;
+
+                hit = hits.OrderBy(x => x.distance).First();
+                movedDistance = hit.distance - HIT_CHECK_FLOAT_DISTANCE;
+                slideDistance = requestMoveDistance - (hit.distance - HIT_CHECK_FLOAT_DISTANCE);
+                return requestMoveDirNormalized * movedDistance + slideDirection * slideDistance;
+            }
+
+            return requestMove;
         }
     }
+    public float frontDistance = 0;
     // public Vector3 MoveAlongWall(Vector3 move)
     // {
     //     var curPos = transform.position;
