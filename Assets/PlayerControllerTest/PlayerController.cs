@@ -58,13 +58,6 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Physics.Raycast(transform.position, transform.forward, out var hit, maxDistance: 100))
-        {
-            frontDistance = hit.distance;
-            hitNormalLine.SetPositions(new Vector3[] { hit.point, hit.point + hit.normal * 3f });
-            moveLine.SetPositions(new Vector3[]{transform.position, transform.position + transform.forward * hit.distance});
-        }
-
         if (Input.GetKeyDown(KeyCode.LeftShift))
         {
             if (!_isLoackedCursor)
@@ -99,7 +92,7 @@ public class PlayerController : MonoBehaviour
                 // カメラの回転を上下方向（X軸）に適用
                 // _cmemraTransform.localRotation = Quaternion.Euler(_xRotaition, 0f, 0f);
                 // // プレイヤーの体の回転を左右方向（Y軸）に適用
-                // transform.Rotate(Vector3.up * mouseX);
+                transform.Rotate(Vector3.up * mouseX);
             }
         }
 
@@ -200,26 +193,20 @@ public class PlayerController : MonoBehaviour
             FinalInputVelocityWorld.z *= DRAG_VALUE;
         }
 
-        // WorldDirecionに変換
-        if (CurrentMoveSpeed != 0)
-        {
-            FinalInputVelocityWorld = transform.TransformDirection(CurrentInputMoveLocal);
-        }
 
-        FinalVelocityWorldApply = FinalInputVelocityWorld * Time.deltaTime;
 
-        if (FinalVelocityWorldApply.x != 0 || FinalVelocityWorldApply.z != 0)
-        {
-            FinalVelocityWorldApply = MoveAlongWall(FinalVelocityWorldApply);
-            // FinalVelocityWorldApply = MoveAlongWall(FinalVelocityWorldApply);
-            transform.position += FinalVelocityWorldApply;
-            // var result = GetHitPlaneVect(FinalVelocityWorldApply);
-            //
-            // if(result.HasValue)
-            // {
-            //     FinalVelocityWorldApply = result.Value;
-            // }
-        }
+        // if (FinalVelocityWorldApply.x != 0 || FinalVelocityWorldApply.z != 0)
+        // {
+        // FinalVelocityWorldApply = MoveAlongWall(FinalVelocityWorldApply);
+        // FinalVelocityWorldApply = MoveAlongWall(FinalVelocityWorldApply);
+        // transform.position += FinalVelocityWorldApply;
+        // var result = GetHitPlaneVect(FinalVelocityWorldApply);
+        //
+        // if(result.HasValue)
+        // {
+        //     FinalVelocityWorldApply = result.Value;
+        // }
+        // }
 
         // CurrentGroundTouchState = CheckGroundTouch();
         // CheckJumpTouch();
@@ -250,148 +237,212 @@ public class PlayerController : MonoBehaviour
         // }
 
         // OnEdtiroExecute();
-    }
-    [ContextMenu("AAAAA")]
-    public void OnEdtiroExecute()
-    {
-        var ray = new Ray() { origin = transform.position, direction = transform.forward };
-        if (Physics.SphereCast(ray, BODY_SIZE_HALF, out var hit))
+
+        // WorldDirecionに変換
+        if (CurrentMoveSpeed != 0)
         {
-            moveLine.SetPositions(new Vector3[] { hit.point, hit.point + -ray.direction * hit.distance});
-        }
-    }
-    private Vector3? GetHitPlaneVect(Vector3 moveDirection)
-    {
-        var moveDistance = Mathf.Sqrt(moveDirection.x * moveDirection.x + moveDirection.z * moveDirection.z);
-        var direction = new Vector3(moveDirection.x, 0, moveDirection.z).normalized;
-        var castDistance = moveDistance + HIT_CHECK_FLOAT_DISTANCE;
-        if (Physics.SphereCast(transform.position, BODY_SIZE_HALF, direction, out var hitInfo, castDistance))
-        {
-            var hitOriginPoint = hitInfo.point + hitInfo.normal * (HIT_CHECK_FLOAT_DISTANCE + BODY_SIZE_HALF);
-            // hitNormalLine.SetPositions(new Vector3[] { hitOriginPoint, hitOriginPoint + hitInfo.normal * 5 });
-            var horizontalHitMovedDistance = hitInfo.distance - HIT_CHECK_FLOAT_DISTANCE;
-            // moveLine.SetPositions(new Vector3[] { transform.position, hitOriginPoint });
-
-            // if (hitMovedDistance < moveDistance)
-            {
-                var newVelocityWorld = direction * horizontalHitMovedDistance;
-
-                var invertedNormal = -hitInfo.normal;
-                var directionNormalized = direction.normalized;
-                Vector3 projectedDirection = directionNormalized - Vector3.Dot(directionNormalized, invertedNormal) * invertedNormal;
-                var projectedDirectionDistance = moveDistance - horizontalHitMovedDistance;
-
-                newVelocityWorld += projectedDirection * projectedDirectionDistance;
-                // fixLine.SetPositions(new Vector3[] { hitOriginPoint, hitOriginPoint + projectedDirection * projectedDirectionDistance });
-                return newVelocityWorld;
-            }
-        }
-
-        return null;
-    }
-
-    public Vector3 MoveAlongWall(Vector3 move)
-    {
-        var curPos = transform.position;
-        var requestMoveDistance = move.magnitude;
-        var requestMoveDirNormalized = move.normalized;
-
-        // SphereCastAllで衝突するすべての壁を取得dw
-        var hits = Physics.SphereCastAll(new Ray(curPos, requestMoveDirNormalized), BODY_SIZE_HALF, requestMoveDistance + HIT_CHECK_FLOAT_DISTANCE);
-
-        if (hits.Length == 0)
-        {
-            // 衝突がなければ通常の移動を返す
-            return move;
-        }
-
-        Vector3 slideDirection = requestMoveDirNormalized;
-        Vector3 intersectionDirection = Vector3.zero;
-        hits = hits.Where(x => x.point != Vector3.zero).ToArray();
-
-        if (hits.Length == 0)
-        {
-            // 衝突がなければ通常の移動を返す
-            return move;
-        }
-
-        if (hits.Length >= 3)
-        {
-            // 3つ以上の壁にヒットしている場合、完全に動けないと判定してゼロ移動
-            return Vector3.zero;
-        }
-        else if (hits.Length == 2)
-        {
-            // 最初の2つの壁法線を取得
-            Vector3 normal1 = hits[0].normal;
-            Vector3 normal2 = hits[1].normal;
-
-            // 法線の向きに基づいて水平面と斜面を判別
-            bool isGround1 = hits[0].point == Vector3.zero;
-            bool isGround2 = hits[1].point == Vector3.zero;
-
-            if (isGround1 || isGround2)
-            {
-
-                // 斜面の法線を取得
-                var normalHit = isGround1 ? hits[1] : hits[0];
-                // 2つの壁がどちらも垂直面の場合、交差方向でスライド
-                intersectionDirection = Vector3.Cross(normalHit.normal, Vector3.up).normalized;
-                slideDirection = Vector3.Project(requestMoveDirNormalized, intersectionDirection).normalized;
-
-                var hit = normalHit;
-                var slideDistance = (hit.distance - HIT_CHECK_FLOAT_DISTANCE);
-                return slideDirection * slideDistance;
-            }
-            else
-            {
-                // 2つの壁がどちらも垂直面の場合、交差方向でスライド
-                intersectionDirection = Vector3.Cross(normal1, normal2).normalized;
-                slideDirection = Vector3.Project(requestMoveDirNormalized, intersectionDirection).normalized;
-
-                var hit = hits.OrderBy(x => x.distance).First();
-                var movedDistance = hit.distance - HIT_CHECK_FLOAT_DISTANCE;
-                var slideDistance = requestMoveDistance - (hit.distance - HIT_CHECK_FLOAT_DISTANCE);
-                return requestMoveDirNormalized * movedDistance + slideDirection * slideDistance;
-            }
+            FinalInputVelocityWorld = transform.TransformDirection(CurrentInputMoveLocal);
         }
         else
         {
-            // 壁が1つだけの場合、その法線に基づいてスライド方向を決定
-            var hit = hits[0];
-            slideDirection = Vector3.ProjectOnPlane(requestMoveDirNormalized, hit.normal).normalized;
-            var movedDistance = hit.distance - HIT_CHECK_FLOAT_DISTANCE;
-            var slideDistance = requestMoveDistance - movedDistance;
-
-            var requestMove = requestMoveDirNormalized * movedDistance + slideDirection * slideDistance;
-
-            var newHits = Physics.SphereCastAll(new Ray(curPos, requestMove.normalized), BODY_SIZE_HALF, requestMove.magnitude )
-                .OrderBy(x => x.distance).ToArray();
-
-            if (newHits.Length >= 3 || newHits.Any(x => x.point == Vector3.zero))
-            {
-                // もう面倒いので、計算したくない
-                return requestMoveDirNormalized * movedDistance;
-            }
-
-            var newHit = newHits.FirstOrDefault(x => x.transform != hit.transform);
-
-            if (newHit.transform != null)
-            {
-                // 2つの壁がどちらも垂直面の場合、交差方向でスライド
-                intersectionDirection = Vector3.Cross(hit.normal, newHit.normal).normalized;
-                slideDirection = Vector3.Project(requestMoveDirNormalized, intersectionDirection).normalized;
-
-                hit = hits.OrderBy(x => x.distance).First();
-                movedDistance = hit.distance - HIT_CHECK_FLOAT_DISTANCE;
-                slideDistance = requestMoveDistance - (hit.distance - HIT_CHECK_FLOAT_DISTANCE);
-                return requestMoveDirNormalized * movedDistance + slideDirection * slideDistance;
-            }
-
-            return requestMove;
+            // todo 摩擦力計算
+            MovePerFrame = Vector3.zero;
         }
+
+        FinalVelocityWorldApply = FinalInputVelocityWorld * Time.deltaTime;
+        MovePerFrame = RequestAddSpeed(FinalVelocityWorldApply);
+
+        var frameMove = ColliderCheck(MovePerFrame);
+        transform.position += frameMove;
     }
-    public float frontDistance = 0;
+    public Vector3 MovePerFrame;
+    public Vector3 RequestAddSpeed(Vector3 spdAddFrame)
+    {
+        var curFrameMaxSpeed = MAX_HOR_INPUT_SPEED * Time.deltaTime;
+        var requestMove = MovePerFrame + spdAddFrame;
+
+        var curSpeedLength = MovePerFrame.magnitude;
+        var scale = curFrameMaxSpeed / curSpeedLength;
+
+        if(scale < 1)
+        {
+            requestMove *= scale;
+        }
+
+        return requestMove;
+    }
+    public Vector3 ColliderCheck(Vector3 requestMove)
+    {
+        var requestMoveDistance = requestMove.magnitude;
+        var requestMoveDir = requestMove.normalized;
+
+        if (requestMoveDistance == 0)
+        {
+            return Vector3.zero;
+        }
+
+        const float MOVE_FLOAT_DISTANCE = 0.001f;
+        const float FLOAT_ROUND_OFF = 0.0001f;//　壁から絶対に離れている保証floatの丸目誤差補完用
+        const float MAX_CHECK_DISTANCE = 3f;
+
+        var firstRay = new Ray(transform.position - requestMoveDir * MOVE_FLOAT_DISTANCE, requestMoveDir);
+        if(Physics.SphereCast(firstRay, BODY_SIZE_HALF, out var hitInfo, MAX_CHECK_DISTANCE))
+        {
+            /*
+            |--FLOAT--|-----HALF-----|--→|WALL
+            */
+            // hitInfo.distanceが0.00099994
+            var hitDistance = hitInfo.distance - MOVE_FLOAT_DISTANCE;
+            var firstMoveResult = requestMoveDir * (requestMoveDistance - FLOAT_ROUND_OFF); ;
+
+            // 壁の中に刺さっている
+            if (hitDistance < 0)
+            {
+                
+            }
+
+            if(hitDistance >= requestMoveDistance)
+            {
+                return firstMoveResult;
+            }
+            
+
+            var projectionDistance = requestMoveDistance - hitDistance - FLOAT_ROUND_OFF;
+
+            if(projectionDistance < 0)
+            {
+                return firstMoveResult;
+            }
+            var forwardMove = requestMoveDir * hitDistance;
+            var forwardOrigin = transform.position + forwardMove;
+            var projection = Vector3.ProjectOnPlane(requestMoveDir, hitInfo.normal).normalized;
+            var projectionMove = forwardMove + projection * projectionDistance;
+
+            var secRay = new Ray(transform.position + forwardMove, projection);
+
+            if(Physics.SphereCast(secRay, BODY_SIZE_HALF, out var secHit, projectionDistance))
+            {
+                var secHitDistance = secHit.distance - MOVE_FLOAT_DISTANCE;
+
+                if (secHitDistance <= 0)
+                {
+                    return projectionMove;
+                }
+
+                var crossDirection = Vector3.Cross(hitInfo.normal, secHit.normal).normalized;
+                return projectionMove + crossDirection * (projectionDistance - secHitDistance);
+            }
+            else
+            {
+                return projectionMove;
+            }
+        }
+
+        return requestMove;
+
+    }
+    // public Vector3 MoveAlongWall(Vector3 move)
+    // {
+    //     var curPos = transform.position;
+    //     var requestMoveDistance = move.magnitude;
+    //     var requestMoveDirNormalized = move.normalized;
+
+    //     // SphereCastAllで衝突するすべての壁を取得
+    //     var hits = Physics.SphereCastAll(new Ray(curPos, requestMoveDirNormalized), BODY_SIZE_HALF, requestMoveDistance + HIT_CHECK_FLOAT_DISTANCE);
+
+    //     if (hits.Length == 0)
+    //     {
+    //         // 衝突がなければ通常の移動を返す
+    //         return move;
+    //     }
+
+    //     Vector3 slideDirection = requestMoveDirNormalized;
+    //     Vector3 intersectionDirection = Vector3.zero;
+    //     hits = hits.Where(x => x.point != Vector3.zero).ToArray();
+
+    //     if (hits.Length == 0)
+    //     {
+    //         // 衝突がなければ通常の移動を返す
+    //         return move;
+    //     }
+
+    //     if (hits.Length >= 3)
+    //     {
+    //         // 3つ以上の壁にヒットしている場合、完全に動けないと判定してゼロ移動
+    //         return Vector3.zero;
+    //     }
+    //     // else if (hits.Length == 2)
+    //     // {
+    //     //     // 最初の2つの壁法線を取得
+    //     //     Vector3 normal1 = hits[0].normal;
+    //     //     Vector3 normal2 = hits[1].normal;
+
+    //     //     // 法線の向きに基づいて水平面と斜面を判別
+    //     //     bool isGround1 = hits[0].point == Vector3.zero;
+    //     //     bool isGround2 = hits[1].point == Vector3.zero;
+
+    //     //     if (isGround1 || isGround2)
+    //     //     {
+    //     //         // 斜面の法線を取得
+    //     //         var normalHit = isGround1 ? hits[1] : hits[0];
+    //     //         // 2つの壁がどちらも垂直面の場合、交差方向でスライド
+    //     //         intersectionDirection = Vector3.Cross(normalHit.normal, Vector3.up).normalized;
+    //     //         slideDirection = Vector3.Project(requestMoveDirNormalized, intersectionDirection).normalized;
+
+    //     //         var hit = normalHit;
+    //     //         var slideDistance = (hit.distance - HIT_CHECK_FLOAT_DISTANCE);
+    //     //         return slideDirection * slideDistance;
+    //     //     }
+    //     //     else
+    //     //     {
+    //     //         // 2つの壁がどちらも垂直面の場合、交差方向でスライド
+    //     //         intersectionDirection = Vector3.Cross(normal1, normal2).normalized;
+    //     //         slideDirection = Vector3.Project(requestMoveDirNormalized, intersectionDirection).normalized;
+
+    //     //         var hit = hits.OrderBy(x => x.distance).First();
+    //     //         var movedDistance = hit.distance - HIT_CHECK_FLOAT_DISTANCE;
+    //     //         var slideDistance = requestMoveDistance - (hit.distance - HIT_CHECK_FLOAT_DISTANCE);
+    //     //         return requestMoveDirNormalized * movedDistance + slideDirection * slideDistance;
+    //     //     }
+    //     // }
+    //     else
+    //     {
+    //         // 壁が1つだけの場合、その法線に基づいてスライド方向を決定
+    //         var hit = hits[0];
+    //         slideDirection = Vector3.ProjectOnPlane(requestMoveDirNormalized, hit.normal).normalized;
+    //         var movedDistance = hit.distance - HIT_CHECK_FLOAT_DISTANCE;
+    //         var slideDistance = requestMoveDistance - movedDistance;
+
+    //         var requestMove = requestMoveDirNormalized * movedDistance + slideDirection * slideDistance;
+    //         var nextOrigin = curPos + requestMoveDirNormalized * movedDistance;
+
+    //         var newHits = Physics.SphereCastAll(new Ray(nextOrigin, slideDirection), BODY_SIZE_HALF, slideDistance)
+    //             .OrderBy(x => x.distance).ToArray();
+
+    //         if (newHits.Length >= 3 || newHits.Any(x => x.point == Vector3.zero))
+    //         {
+    //             // もう面倒いので、計算したくない
+    //             return requestMoveDirNormalized * movedDistance;
+    //         }
+
+    //         var newHit = newHits.FirstOrDefault(x => x.transform != hit.transform);
+
+    //         if (newHit.transform != null)
+    //         {
+    //             // 2つの壁がどちらも垂直面の場合、交差方向でスライド
+    //             intersectionDirection = Vector3.Cross(hit.normal, newHit.normal).normalized;
+    //             slideDirection = Vector3.Project(requestMoveDirNormalized, intersectionDirection).normalized;
+
+    //             hit = hits.OrderBy(x => x.distance).First();
+    //             movedDistance = hit.distance - HIT_CHECK_FLOAT_DISTANCE;
+    //             slideDistance = requestMoveDistance - (hit.distance - HIT_CHECK_FLOAT_DISTANCE);
+    //             return requestMoveDirNormalized * movedDistance + slideDirection * slideDistance;
+    //         }
+
+    //         return requestMove;
+    //     }
+    // }
+    // public float frontDistance = 0;
     // public Vector3 MoveAlongWall(Vector3 move)
     // {
     //     var curPos = transform.position;
@@ -412,103 +463,4 @@ public class PlayerController : MonoBehaviour
     
     //     return move;
     // }
-
-
-
-    private GroundTouchState CheckGroundTouch()
-    {
-        if(IsJumping)
-        {
-            return GroundTouchState.Floating;
-        }
-        
-        // moveLine.SetPositions(new Vector3[] { curPos, wallHitOriginPos});
-        // hitNormalLine.SetPositions(new Vector3[] { wallHitOriginPos, hit.point + hit.normal * 5});
-        // fixLine.SetPositions(new Vector3[] { wallHitOriginPos, wallHitOriginPos + slideDirection * 5});
-
-        var gravityVelocity = FALL_GRAVITY * Time.deltaTime;
-        var dropDistanceNextFrame = Mathf.Min(-FallVelocityWorldApply.y + gravityVelocity, MAX_GRAVITY_SPEED) * Time.deltaTime;
-        var dropRay = new Ray() { origin = transform.position + Vector3.up * 0.001f, direction = Vector3.down };
-
-        var groundTouchState = GroundTouchState.Floating;
-
-        var distance = dropDistanceNextFrame + HIT_CHECK_FLOAT_DISTANCE;
-        if (Physics.SphereCast(dropRay, BODY_SIZE_HALF, out var hitInfo2 , distance))
-        {
-            groundTouchState = GroundTouchState.Touching_2;
-            FootGroundAngle = Vector3.Angle(Vector3.up, hitInfo2.normal);
-
-            if (FootGroundAngle > GROUND_SLIDE_DEGREE)
-            {
-                var invertHitNormalNormalized = -hitInfo2.normal;
-                var hitOriginPoint = hitInfo2.point + hitInfo2.normal * (HIT_CHECK_FLOAT_DISTANCE + BODY_SIZE_HALF);
-                var hitDistance = Vector3.Distance(hitOriginPoint, transform.position);
-                var newFallDirection = new Vector3(FallVelocityWorldApply.x, -1 * hitDistance, FallVelocityWorldApply.z);
-                var slipDistance = gravityVelocity - hitDistance;
-                var projectedDirection = Vector3.down - Vector3.Dot(Vector3.down, invertHitNormalNormalized) * invertHitNormalNormalized;
-                newFallDirection += projectedDirection * slipDistance;
-                FallVelocityWorldApply = newFallDirection;
-
-                fixLine.SetPositions(new Vector3[] { hitOriginPoint, hitOriginPoint + projectedDirection * slipDistance });
-                groundTouchState = GroundTouchState.Touching_2_sliding;
-            }
-            else
-            {
-                FallVelocityWorldApply = Vector3.zero;
-            }
-        }
-        else if (Physics.SphereCast(dropRay, BODY_SIZE_HALF, out var hitInfo1, distance * 1.2f))
-        {
-            groundTouchState = GroundTouchState.Touching_1;
-        }
-        else
-        {
-            FallVelocityWorldApply.y -= gravityVelocity;
-        }
-
-        return groundTouchState;
-    }
-    private void CheckJumpTouch()
-    {
-        if(!IsJumping)
-        {
-            return;
-        }
-
-        JumpVelocityWorldApply.y -= JUMP_GRAVITY * Time.deltaTime;
-
-        if (JumpVelocityWorldApply.y < 0)
-        {
-            IsJumping = false;
-            JumpVelocityWorldApply = Vector3.zero;
-            // ここ1フレームのJump失いがある
-            return;
-        }
-
-        var jumpRay = new Ray() { origin = transform.position, direction = Vector3.up };
-        var jumpDistanceNextFrame = JumpVelocityWorldApply.y * Time.deltaTime;
-        var rayDistance = jumpDistanceNextFrame + HIT_CHECK_FLOAT_DISTANCE;
-
-        if (Physics.SphereCast(jumpRay, BODY_SIZE_HALF, out var hitInfo, rayDistance))
-        {
-            headGroundAngle = Vector3.Angle(Vector3.down, hitInfo.normal);
-
-            if (headGroundAngle > HEAD_SLIDE_DEEGREE)
-            {
-                var invertHitNormalNormalized = -hitInfo.normal;
-                var hitOriginPoint = hitInfo.point + hitInfo.normal * (HIT_CHECK_FLOAT_DISTANCE + BODY_SIZE_HALF);
-                var hitDistance = Vector3.Distance(hitOriginPoint, transform.position);
-                var newJumpDirection = new Vector3(JumpVelocityWorldApply.x, hitDistance, JumpVelocityWorldApply.z);
-                var slipDistance = jumpDistanceNextFrame - hitDistance;
-                var projectedDirection = Vector3.up - Vector3.Dot(Vector3.up, invertHitNormalNormalized) * invertHitNormalNormalized;
-                newJumpDirection += projectedDirection * slipDistance;
-                JumpVelocityWorldApply = newJumpDirection;
-            }
-            else
-            {
-                JumpVelocityWorldApply.y = 0;
-            }
-        }
-    }
-    public float headGroundAngle;
 }
