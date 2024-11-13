@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class RayTest : MonoBehaviour
 {
@@ -43,23 +44,24 @@ public class RayTest : MonoBehaviour
         //     LineRendererMove.SetPositions(new Vector3[] { transform.position, transform.position + ray.direction * 5 + Vector3.up * 5 });
         // }
 
-        CheckPhysic(TargetTransform.position - transform.position);
+        CheckPhysic2(TargetTransform.position - transform.position);
     }
     Vector3 gizmo1;
     Vector3 gizmo2;
     Vector3 gizmo3;
-    public Vector3 CheckPhysic(Vector3 move)
+    public Vector3 CheckPhysic2(Vector3 move)
     {
         const float HALF_SIZE = 0.5f;
         const float RAY_BACK_DISTANCE = 0.01f;
         const float FLOAT_AROUND = 0.0001f;
         const float MAX_CHECK_DISTANCE = 10f;
+        var curPos = transform.position;
 
         var moveDir0 = move.normalized;
         var moveDistance0 = move.magnitude;
-        var ray0 = new Ray(transform.position - moveDir0 * RAY_BACK_DISTANCE, moveDir0);
+        var ray0 = new Ray(curPos - moveDir0 * RAY_BACK_DISTANCE, moveDir0);
 
-        if(!Physics.SphereCast(ray0, HALF_SIZE, out var hit0, MAX_CHECK_DISTANCE))
+        if (!Physics.SphereCast(ray0, HALF_SIZE, out var hit0, MAX_CHECK_DISTANCE))
         {
             return move;
         }
@@ -67,73 +69,106 @@ public class RayTest : MonoBehaviour
         var hitDistance0 = hit0.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
         var remaingDistance0 = moveDistance0 - hitDistance0;
 
-        var hit0MoveResult = Vector3.zero;
-        var hit0TargetPos = Vector3.zero;
+        gizmo1 = curPos + move;
 
+        // ヒット距離がmove距離より長いので、そのまま進むことができる
         if (remaingDistance0 < 0)
         {
-            hit0MoveResult = moveDir0 * moveDistance0;
-            hit0TargetPos = transform.position + hit0MoveResult;
-            gizmo1 = hit0TargetPos;
-            return hit0MoveResult;
+            return move;
         }
 
-        hit0MoveResult = moveDir0 * hitDistance0;
-        hit0TargetPos = transform.position + hit0MoveResult;
+        // そうでなければ、ヒットした手前まで移動する座標を作る
+        var hit0MoveResult = moveDir0 * hitDistance0;
+        var hit0TargetPos = curPos + hit0MoveResult;
         gizmo1 = hit0TargetPos;
 
+        // 横滑りの情報用意
         var moveDir1 = Vector3.ProjectOnPlane(moveDir0, hit0.normal).normalized;
         var moveDistance1 = remaingDistance0;
         var ray1 = new Ray(hit0TargetPos - moveDir1 * RAY_BACK_DISTANCE, moveDir1);
-        var hit1MoveResult = moveDir1 * moveDistance1;
-        var hit1TargetPos = hit0TargetPos + hit1MoveResult;
+
+        // もしヒットしなかった時のResult用意
+        var hit1MoveResult = hit0MoveResult + moveDir1 * moveDistance1;
+        var hit1TargetPos = curPos + hit1MoveResult;
+        gizmo2 = hit1TargetPos;
 
         if (!Physics.SphereCast(ray1, HALF_SIZE, out var hit1, MAX_CHECK_DISTANCE))
         {
-            gizmo2 = hit1TargetPos;
-            return hit0MoveResult + hit1MoveResult;
+            return hit1MoveResult;
         }
 
         var hitDistance1 = hit1.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
-        var remaingDistance1 = moveDistance1 - hitDistance1;
+        var remaingDistance1 = remaingDistance0 - hitDistance1;
 
         if (remaingDistance1 < 0)
         {
-            gizmo2 = hit1TargetPos;
             return hit0MoveResult + hit1MoveResult;
         }
 
         hit1MoveResult = moveDir1 * hitDistance1;
-        hit1TargetPos = hit0TargetPos + hit1MoveResult;
+        hit1TargetPos = curPos + hit0MoveResult + hit1MoveResult;
         gizmo2 = hit1TargetPos;
 
         var moveDir2a = Vector3.Cross(hit0.normal, hit1.normal).normalized;
-        var moveDir2b = Vector3.Cross(hit0.normal, hit1.normal).normalized;
+        var moveDir2b = Vector3.Cross(hit1.normal, hit0.normal).normalized;
 
         var dot2aD = Vector3.Dot(moveDir2a, moveDir1);
         var dot2bD = Vector3.Dot(moveDir2b, moveDir1);
 
         var moveDir2 = Vector3.zero;
-        if(dot2aD > 0)
+        if (dot2aD > 0)
         {
             moveDir2 = moveDir2a;
+            SetLinePos(LineRendererDir, hit1TargetPos, hit1TargetPos + moveDir2 * 5);
         }
-        else if(dot2bD > 0)
+        else if (dot2bD > 0)
         {
             moveDir2 = moveDir2b;
+            SetLinePos(LineRendererDir, hit1TargetPos, hit1TargetPos + moveDir2 * 5);
         }
         else
         {
+            SetLinePos(LineRendererDir, Vector3.zero, Vector3.up);
             moveDir2 = Vector3.zero;
         }
 
-        var ray2 = new Ray();
-        return Vector3.zero;
+        var ray2 = new Ray(hit1TargetPos - moveDir2 * RAY_BACK_DISTANCE, moveDir2 * RAY_BACK_DISTANCE);
+        var hit2MoveResult = moveDir2 * remaingDistance1;
+        var hit2TargetPos = curPos + hit0MoveResult + hit1MoveResult + hit2MoveResult;
+        gizmo3 = hit2TargetPos;
+
+        if (!Physics.SphereCast(ray2, HALF_SIZE, out var hit2, MAX_CHECK_DISTANCE))
+        {
+            return hit0MoveResult + hit1MoveResult + hit2MoveResult;
+        }
+
+        var hitDistance2 = hit1.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
+        var remaingDistance2 = remaingDistance1 - hitDistance2;
+
+        if (remaingDistance2 < 0)
+        {
+            return hit0MoveResult + hit1MoveResult + hit2MoveResult;
+        }
+
+        //3点タッチしてあれば、もう計算しない
+
+        hit2MoveResult = moveDir2 * hitDistance2;
+        hit2TargetPos = curPos + hit0MoveResult + hit1MoveResult;
+
+        gizmo3 = hit2TargetPos;
+        return hit1TargetPos - curPos;
     }
-    void OnDrawGizmos()
+        void OnDrawGizmos()
     {
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(gizmo1, 0.1f);
+        Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(gizmo2, 0.1f);
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireSphere(gizmo3, 0.1f);
+    }
+    void SetLinePos(LineRenderer lineRenderer, Vector3 s, Vector3 e)
+    {
+        lineRenderer.SetPositions(new Vector3[] { s, e });
     }
 }
