@@ -44,11 +44,18 @@ public class RayTest : MonoBehaviour
         //     LineRendererMove.SetPositions(new Vector3[] { transform.position, transform.position + ray.direction * 5 + Vector3.up * 5 });
         // }
 
-        CheckPhysic2(TargetTransform.position - transform.position);
+       var vec = CheckPhysic2(Vector3.down * gravity * Time.deltaTime);
+        transform.position += vec;
     }
+    public float gravity = 0;
+    public float MAX_GRAVITY = 9.8f;
+    public float friction = 0.8f;
     Vector3 gizmo1;
     Vector3 gizmo2;
     Vector3 gizmo3;
+    public float remaingDistance0;
+    public float remaingDistance1;
+    public float remaingDistance2;
     public Vector3 CheckPhysic2(Vector3 move)
     {
         const float HALF_SIZE = 0.5f;
@@ -67,7 +74,7 @@ public class RayTest : MonoBehaviour
         }
 
         var hitDistance0 = hit0.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
-        var remaingDistance0 = moveDistance0 - hitDistance0;
+        remaingDistance0 = moveDistance0 - hitDistance0;
 
         gizmo1 = curPos + move;
 
@@ -76,6 +83,8 @@ public class RayTest : MonoBehaviour
         {
             return move;
         }
+
+        remaingDistance0 *= friction;
 
         // そうでなければ、ヒットした手前まで移動する座標を作る
         var hit0MoveResult = moveDir0 * hitDistance0;
@@ -98,12 +107,15 @@ public class RayTest : MonoBehaviour
         }
 
         var hitDistance1 = hit1.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
-        var remaingDistance1 = remaingDistance0 - hitDistance1;
+        remaingDistance1 = remaingDistance0 - hitDistance1;
 
         if (remaingDistance1 < 0)
         {
             return hit0MoveResult + hit1MoveResult;
         }
+
+
+        remaingDistance1 *= friction;
 
         hit1MoveResult = moveDir1 * hitDistance1;
         hit1TargetPos = curPos + hit0MoveResult + hit1MoveResult;
@@ -143,20 +155,23 @@ public class RayTest : MonoBehaviour
         }
 
         var hitDistance2 = hit1.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
-        var remaingDistance2 = remaingDistance1 - hitDistance2;
+        remaingDistance2 = remaingDistance1 - hitDistance2;
 
         if (remaingDistance2 < 0)
         {
             return hit0MoveResult + hit1MoveResult + hit2MoveResult;
         }
 
+
+        remaingDistance2 *= friction;
+
         //3点タッチしてあれば、もう計算しない
 
         hit2MoveResult = moveDir2 * hitDistance2;
-        hit2TargetPos = curPos + hit0MoveResult + hit1MoveResult;
+        hit2TargetPos = curPos + hit0MoveResult + hit1MoveResult + hit2MoveResult;
 
         gizmo3 = hit2TargetPos;
-        return hit1TargetPos - curPos;
+        return hit2TargetPos - curPos;
     }
         void OnDrawGizmos()
     {
