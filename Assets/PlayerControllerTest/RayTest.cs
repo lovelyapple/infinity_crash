@@ -44,9 +44,18 @@ public class RayTest : MonoBehaviour
         //     LineRendererMove.SetPositions(new Vector3[] { transform.position, transform.position + ray.direction * 5 + Vector3.up * 5 });
         // }
 
-       var vec = CheckPhysic2(Vector3.down * gravity * Time.deltaTime);
-        transform.position += vec;
+
+        if (IsSim)
+        {
+            CheckPhysic2(TargetTransform.position - transform.position);
+        }
+        else
+        {
+               var vec = CheckPhysic2(Vector3.down * gravity * Time.deltaTime);
+            transform.position += vec;
+        }
     }
+    public bool IsSim = false;
     public float gravity = 0;
     public float MAX_GRAVITY = 9.8f;
     public float friction = 0.8f;
@@ -56,6 +65,9 @@ public class RayTest : MonoBehaviour
     public float remaingDistance0;
     public float remaingDistance1;
     public float remaingDistance2;
+    public LineRenderer normalLine0;
+    public LineRenderer normalLine1;
+    public LineRenderer normalLine2;
     public Vector3 CheckPhysic2(Vector3 move)
     {
         const float HALF_SIZE = 0.5f;
@@ -70,6 +82,7 @@ public class RayTest : MonoBehaviour
 
         if (!Physics.SphereCast(ray0, HALF_SIZE, out var hit0, MAX_CHECK_DISTANCE))
         {
+            SetLinePos(normalLine0, Vector3.zero, Vector3.up);
             return move;
         }
 
@@ -77,6 +90,7 @@ public class RayTest : MonoBehaviour
         remaingDistance0 = moveDistance0 - hitDistance0;
 
         gizmo1 = curPos + move;
+        SetLinePos(normalLine0, hit0.point, hit0.point + hit0.normal * 3);
 
         // ヒット距離がmove距離より長いので、そのまま進むことができる
         if (remaingDistance0 < 0)
@@ -103,15 +117,17 @@ public class RayTest : MonoBehaviour
 
         if (!Physics.SphereCast(ray1, HALF_SIZE, out var hit1, MAX_CHECK_DISTANCE))
         {
+            SetLinePos(normalLine1, Vector3.zero, Vector3.up);
             return hit1MoveResult;
         }
 
         var hitDistance1 = hit1.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
         remaingDistance1 = remaingDistance0 - hitDistance1;
+        SetLinePos(normalLine1, hit1.point, hit1.point + hit1.normal * 3);
 
         if (remaingDistance1 < 0)
         {
-            return hit0MoveResult + hit1MoveResult;
+            return hit1MoveResult;
         }
 
 
@@ -145,35 +161,36 @@ public class RayTest : MonoBehaviour
         }
 
         var ray2 = new Ray(hit1TargetPos - moveDir2 * RAY_BACK_DISTANCE, moveDir2 * RAY_BACK_DISTANCE);
-        var hit2MoveResult = moveDir2 * remaingDistance1;
-        var hit2TargetPos = curPos + hit0MoveResult + hit1MoveResult + hit2MoveResult;
+        var hit2MoveResult = hit0MoveResult + hit1MoveResult + moveDir2 * remaingDistance1;
+        var hit2TargetPos = curPos + hit2MoveResult;
         gizmo3 = hit2TargetPos;
 
         if (!Physics.SphereCast(ray2, HALF_SIZE, out var hit2, MAX_CHECK_DISTANCE))
         {
-            return hit0MoveResult + hit1MoveResult + hit2MoveResult;
+            SetLinePos(normalLine2, Vector3.zero, Vector3.up);
+            return hit2MoveResult;
         }
 
-        var hitDistance2 = hit1.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
+        var hitDistance2 = hit2.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
         remaingDistance2 = remaingDistance1 - hitDistance2;
+        SetLinePos(normalLine2, hit2.point, hit2.point + hit2.normal * 3);
 
         if (remaingDistance2 < 0)
         {
-            return hit0MoveResult + hit1MoveResult + hit2MoveResult;
+            return hit2MoveResult;
         }
-
 
         remaingDistance2 *= friction;
 
         //3点タッチしてあれば、もう計算しない
 
         hit2MoveResult = moveDir2 * hitDistance2;
-        hit2TargetPos = curPos + hit0MoveResult + hit1MoveResult + hit2MoveResult;
+        hit2TargetPos = curPos + hit1MoveResult + hit2MoveResult;
 
         gizmo3 = hit2TargetPos;
-        return hit2TargetPos - curPos;
+        return hit1MoveResult + hit2MoveResult;
     }
-        void OnDrawGizmos()
+    void OnDrawGizmos()
     {
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(gizmo1, 0.1f);
