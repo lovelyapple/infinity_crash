@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -79,6 +80,61 @@ public class RayTest : MonoBehaviour
         var moveDir0 = move.normalized;
         var moveDistance0 = move.magnitude;
         var ray0 = new Ray(curPos - moveDir0 * RAY_BACK_DISTANCE, moveDir0);
+
+        var hits = Physics.SphereCastAll(ray0, HALF_SIZE, moveDistance0 + RAY_BACK_DISTANCE).Where(x => x.point != Vector3.zero).OrderBy(x => x.distance).ToList();
+
+        if(hits.Count >= 3)
+        {
+            moveDistance0 = Mathf.Max(0, hits[0].distance - RAY_BACK_DISTANCE - FLOAT_AROUND);
+            gizmo1 = curPos + moveDir0 * moveDistance0;
+            return moveDir0 * moveDistance0;
+        }
+        else if(hits.Count == 2)
+        {
+            var hit20 = hits[0];
+            var hit21 = hits[1];
+            var hitDisatnace20 = Mathf.Max(0, hit20.distance - RAY_BACK_DISTANCE - FLOAT_AROUND);
+
+            var remaingDistance21 = moveDistance0 - hitDisatnace20;
+            var hit20MoveResult = moveDir0 * hitDisatnace20;
+            var hit20TargetPos = curPos + hit20MoveResult;
+
+            if (remaingDistance21 <= 0)
+            {
+                return moveDir0 * hitDisatnace20;
+            }
+
+            var moveDirc20 = Vector3.Cross(hit20.normal, hit21.normal).normalized;
+            var moveDirc21 = Vector3.Cross(hit21.normal, hit20.normal).normalized;
+
+            var dot20aD = Vector3.Dot(moveDirc20, moveDir0);
+            var dot20bD = Vector3.Dot(moveDirc21, moveDir0);
+
+            var moveDir21 = Vector3.zero;
+            if (dot20aD > 0)
+            {
+                moveDir21 = moveDirc20;
+                SetLinePos(LineRendererDir, hit20TargetPos, hit20TargetPos + moveDir21 * 5);
+            }
+            else if (dot20bD > 0)
+            {
+                moveDir21 = moveDirc21;
+                SetLinePos(LineRendererDir, hit20TargetPos, hit20TargetPos + moveDir21 * 5);
+            }
+            else
+            {
+                SetLinePos(LineRendererDir, Vector3.zero, Vector3.up);
+                moveDir21 = Vector3.zero;
+            }
+
+            var ray21 = new Ray(hit20TargetPos - moveDir21 * RAY_BACK_DISTANCE, moveDir21 * RAY_BACK_DISTANCE);
+            var hit21MoveResult = hit20MoveResult + moveDir21 * remaingDistance21;
+            var hit21TargetPos = curPos + hit21MoveResult;
+            gizmo3 = hit20TargetPos;
+
+            return hit21MoveResult;
+        }
+
 
         if (!Physics.SphereCast(ray0, HALF_SIZE, out var hit0, MAX_CHECK_DISTANCE))
         {
