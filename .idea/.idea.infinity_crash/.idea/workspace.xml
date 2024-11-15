@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3ab074e0-d06f-4f6d-a9ab-a395a2338e51" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.infinity_crash/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.infinity_crash/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/PlayerControllerTest/PlayerController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/PlayerControllerTest/PlayerController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/PlayerTest.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/PlayerTest.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/PlayerControllerTest/RayTest.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/PlayerControllerTest/RayTest.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/JMO Assets/Cartoon FX FREE (old legacy effects).unitypackage.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/raytests.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/raytests.unity" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -66,10 +66,10 @@
       </option>
       <method v="2" />
     </configuration>
-    <configuration name="Attach to Unity Editor" type="UNITY_DEBUG_RUN_CONFIGURATION" factoryName="Unity Debug" show_console_on_std_err="false" show_console_on_std_out="false" port="50000" address="localhost" ignored-value-for-modified-check="27428">
+    <configuration name="Attach to Unity Editor" type="UNITY_DEBUG_RUN_CONFIGURATION" factoryName="Unity Debug" show_console_on_std_err="false" show_console_on_std_out="false" port="50000" address="localhost" ignored-value-for-modified-check="26464">
       <option name="allowRunningInParallel" value="false" />
       <option name="listenPortForConnections" value="false" />
-      <option name="pid" value="27428" />
+      <option name="pid" value="26464" />
       <option name="projectPathOnTarget" />
       <option name="selectedOptions">
         <list />
@@ -88,6 +88,7 @@
       <workItem from="1728394289659" duration="996000" />
       <workItem from="1729135942379" duration="1982000" />
       <workItem from="1730432497806" duration="12340000" />
+      <workItem from="1731662434821" duration="310000" />
     </task>
     <servers />
   </component>
