@@ -312,7 +312,7 @@ public class RayTest : MonoBehaviour
             }
             
             groundDegree =  90 - Vector3.Angle(Vector3.down, moveDir21);
-            if (groundDegree < GroundFrictionlessAngle )
+            if (groundDegree < GroundFrictionlessAngle  || groundDegree == 90f)
             {
                 CurrentGroundTouchState = GroundTouchState.Stationary;
                 return Vector3.zero;
@@ -359,7 +359,7 @@ public class RayTest : MonoBehaviour
 
          groundDegree =  90 - Vector3.Angle(Vector3.down, moveDir1);
 
-        if (groundDegree < GroundFrictionlessAngle )
+        if (groundDegree < GroundFrictionlessAngle || groundDegree == 90f)
         {
             CurrentGroundTouchState = GroundTouchState.Stationary;
             return hit0MoveResult;
@@ -420,7 +420,7 @@ public class RayTest : MonoBehaviour
         }
 
         groundDegree = 90 - Vector3.Angle(Vector3.down, moveDir2);
-        if (groundDegree < GroundFrictionlessAngle )
+        if (groundDegree < GroundFrictionlessAngle || groundDegree == 90f)
         {
             CurrentGroundTouchState = GroundTouchState.Stationary;
             return hit0MoveResult + hit1MoveResult;
