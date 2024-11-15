@@ -56,9 +56,20 @@ public class RayTest : MonoBehaviour
             transform.position += vec;
         }
     }
+    public enum GroundTouchState
+    {
+        Floating,
+        Sliding,
+        Stationary,
+    }
+
+    public GroundTouchState CurrentGroundTouchState;
+    public float DirectDownSpeed = 0;
     public bool IsSim = false;
     public float gravity = 0;
     public float MAX_GRAVITY = 9.8f;
+    public float GroundFrictionlessAngle = 30;
+    public float groundDegree;
     Vector3 gizmo1;
     Vector3 gizmo2;
     Vector3 gizmo3;
@@ -258,6 +269,7 @@ public class RayTest : MonoBehaviour
         {
             moveDistance0 = Mathf.Max(0, hits[0].distance - RAY_BACK_DISTANCE - FLOAT_AROUND);
             gizmo1 = curPos + moveDir0 * moveDistance0;
+            CurrentGroundTouchState = GroundTouchState.Stationary;
             return moveDir0 * moveDistance0;
         }
         else if(hits.Count == 2)
@@ -272,6 +284,7 @@ public class RayTest : MonoBehaviour
 
             if (remainingDistance21 <= 0)
             {
+                CurrentGroundTouchState = GroundTouchState.Sliding;
                 return moveDir0 * hitDistance20;
             }
 
@@ -297,12 +310,20 @@ public class RayTest : MonoBehaviour
                 SetLinePos(LineRendererDir, Vector3.zero, Vector3.up);
                 moveDir21 = Vector3.zero;
             }
+            
+            groundDegree =  90 - Vector3.Angle(Vector3.down, moveDir21);
+            if (groundDegree < GroundFrictionlessAngle )
+            {
+                CurrentGroundTouchState = GroundTouchState.Stationary;
+                return Vector3.zero;
+            }
 
             var ray21 = new Ray(hit20TargetPos - moveDir21 * RAY_BACK_DISTANCE, moveDir21 * RAY_BACK_DISTANCE);
             var hit21MoveResult = hit20MoveResult + moveDir21 * remainingDistance21;
             var hit21TargetPos = curPos + hit21MoveResult;
             gizmo3 = hit20TargetPos;
 
+            CurrentGroundTouchState = GroundTouchState.Sliding;
             return hit21MoveResult;
         }
 
@@ -310,6 +331,7 @@ public class RayTest : MonoBehaviour
         if (!Physics.SphereCast(ray0, HALF_SIZE, out var hit0, MAX_CHECK_DISTANCE))
         {
             SetLinePos(normalLine0, Vector3.zero, Vector3.up);
+            CurrentGroundTouchState = GroundTouchState.Floating;
             return move;
         }
 
@@ -322,6 +344,7 @@ public class RayTest : MonoBehaviour
         // ヒット距離がmove距離より長いので、そのまま進むことができる
         if (remaingDistance0 < 0)
         {
+            CurrentGroundTouchState = GroundTouchState.Floating;
             return move;
         }
         
@@ -333,17 +356,28 @@ public class RayTest : MonoBehaviour
 
         // 横滑りの情報用意
         var moveDir1 = Vector3.ProjectOnPlane(moveDir0, hit0.normal).normalized;
+
+         groundDegree =  90 - Vector3.Angle(Vector3.down, moveDir1);
+
+        if (groundDegree < GroundFrictionlessAngle )
+        {
+            CurrentGroundTouchState = GroundTouchState.Stationary;
+            return hit0MoveResult;
+        }
+        
         var moveDistance1 = remaingDistance0;
         var ray1 = new Ray(hit0TargetPos - moveDir1 * RAY_BACK_DISTANCE, moveDir1);
 
         // もしヒットしなかった時のResult用意
         var hit1MoveResult = hit0MoveResult + moveDir1 * moveDistance1;
+        var hit1MoveResultPrev = hit1MoveResult;
         var hit1TargetPos = curPos + hit1MoveResult;
         gizmo2 = hit1TargetPos;
 
         if (!Physics.SphereCast(ray1, HALF_SIZE, out var hit1, MAX_CHECK_DISTANCE))
         {
             SetLinePos(normalLine1, Vector3.zero, Vector3.up);
+            CurrentGroundTouchState = GroundTouchState.Sliding;
             return hit1MoveResult;
         }
 
@@ -353,6 +387,7 @@ public class RayTest : MonoBehaviour
 
         if (remaingDistance1 < 0)
         {
+            CurrentGroundTouchState = GroundTouchState.Sliding;
             return hit1MoveResult;
         }
         
@@ -384,6 +419,13 @@ public class RayTest : MonoBehaviour
             moveDir2 = Vector3.zero;
         }
 
+        groundDegree = 90 - Vector3.Angle(Vector3.down, moveDir2);
+        if (groundDegree < GroundFrictionlessAngle )
+        {
+            CurrentGroundTouchState = GroundTouchState.Stationary;
+            return hit0MoveResult + hit1MoveResult;
+        }
+
         var ray2 = new Ray(hit1TargetPos - moveDir2 * RAY_BACK_DISTANCE, moveDir2 * RAY_BACK_DISTANCE);
         var hit2MoveResult = hit0MoveResult + hit1MoveResult + moveDir2 * remaingDistance1;
         var hit2TargetPos = curPos + hit2MoveResult;
@@ -392,6 +434,7 @@ public class RayTest : MonoBehaviour
         if (!Physics.SphereCast(ray2, HALF_SIZE, out var hit2, MAX_CHECK_DISTANCE))
         {
             SetLinePos(normalLine2, Vector3.zero, Vector3.up);
+            CurrentGroundTouchState = GroundTouchState.Sliding;
             return hit2MoveResult;
         }
 
@@ -401,6 +444,7 @@ public class RayTest : MonoBehaviour
 
         if (remaingDistance2 < 0)
         {
+            CurrentGroundTouchState = GroundTouchState.Sliding;
             return hit2MoveResult;
         }
 
@@ -410,6 +454,7 @@ public class RayTest : MonoBehaviour
         hit2TargetPos = curPos + hit1MoveResult + hit2MoveResult;
 
         gizmo3 = hit2TargetPos;
+        CurrentGroundTouchState = GroundTouchState.Stationary;
         return hit1MoveResult + hit2MoveResult;
     }
     void OnDrawGizmos()

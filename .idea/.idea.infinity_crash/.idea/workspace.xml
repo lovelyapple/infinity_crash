@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3ab074e0-d06f-4f6d-a9ab-a395a2338e51" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.infinity_crash/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.infinity_crash/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PlayerControllerTest/RayTest.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/PlayerControllerTest/RayTest.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Resources/JMO Assets/Cartoon FX FREE (old legacy effects).unitypackage.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scenes/raytests.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/raytests.unity" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -88,7 +88,8 @@
       <workItem from="1728394289659" duration="996000" />
       <workItem from="1729135942379" duration="1982000" />
       <workItem from="1730432497806" duration="12340000" />
-      <workItem from="1731662434821" duration="310000" />
+      <workItem from="1731662434821" duration="2843000" />
+      <workItem from="1731666489913" duration="1696000" />
     </task>
     <servers />
   </component>
