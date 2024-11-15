@@ -9,13 +9,6 @@ using UnityEngine;
 using UnityEngine.UI;
 public class PlayerController : MonoBehaviour
 {
-    public enum GroundTouchState
-    {
-        Floating,
-        Touching_1,
-        Touching_2,
-        Touching_2_sliding,
-    }
     public float FALL_GRAVITY;
     public float JUMP_GRAVITY;
     public float MAX_GRAVITY_SPEED;
@@ -30,21 +23,13 @@ public class PlayerController : MonoBehaviour
     public float MAX_HOR_INPUT_SPEED;
     public float DRAG_VALUE = 0.97f;
     public float MIN_MOVE_POWER = 0.1f;
-
-    const float HIT_CHECK_FLOAT_DISTANCE = 0.05f;
-
-    public GroundTouchState CurrentGroundTouchState;
-    private bool _canJump => CurrentGroundTouchState >= GroundTouchState.Touching_1;
+    
 
     public Vector3 UserInputDicreionLocal;
     public Vector3 CurrentInputMoveLocal;
     public float CurrentMoveSpeed;
     public Vector3 FinalInputVelocityWorld;
     public Vector3 FinalVelocityWorldApply;
-    public Vector3 FallVelocityWorldApply;
-
-    public Vector3 JumpVelocityWorldApply;
-    public bool IsJumping;
 
     public Transform _cmemraTransform;
     public bool AllowRotate;
@@ -71,6 +56,7 @@ public class PlayerController : MonoBehaviour
                 _isLoackedCursor = false;
             }
         }
+
         // 毎回初期化する
         FinalInputVelocityWorld = Vector3.zero;
 
@@ -83,14 +69,14 @@ public class PlayerController : MonoBehaviour
             float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
             float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
 
-            // if (mouseX != 0 || mouseY != 0)
+            if (mouseX != 0 || mouseY != 0)
             {
                 // 縦方向（Y軸）の回転を制限
                 _xRotaition -= mouseY;
-                _xRotaition = Mathf.Clamp(_xRotaition, -90f, 90f);  // 上下の視点回転を90度までに制限
+                _xRotaition = Mathf.Clamp(_xRotaition, -90f, 90f); // 上下の視点回転を90度までに制限
 
                 // カメラの回転を上下方向（X軸）に適用
-                // _cmemraTransform.localRotation = Quaternion.Euler(_xRotaition, 0f, 0f);
+                _cmemraTransform.localRotation = Quaternion.Euler(_xRotaition, 0f, 0f);
                 // // プレイヤーの体の回転を左右方向（Y軸）に適用
                 transform.Rotate(Vector3.up * mouseX);
             }
@@ -194,50 +180,6 @@ public class PlayerController : MonoBehaviour
         }
 
 
-
-        // if (FinalVelocityWorldApply.x != 0 || FinalVelocityWorldApply.z != 0)
-        // {
-        // FinalVelocityWorldApply = MoveAlongWall(FinalVelocityWorldApply);
-        // FinalVelocityWorldApply = MoveAlongWall(FinalVelocityWorldApply);
-        // transform.position += FinalVelocityWorldApply;
-        // var result = GetHitPlaneVect(FinalVelocityWorldApply);
-        //
-        // if(result.HasValue)
-        // {
-        //     FinalVelocityWorldApply = result.Value;
-        // }
-        // }
-
-        // CurrentGroundTouchState = CheckGroundTouch();
-        // CheckJumpTouch();
-        //
-        // if (_canJump)
-        // {
-        //     if(Input.GetKeyDown(KeyCode.Space))
-        //     {
-        //         JumpVelocityWorldApply.y += JUMP_POWER;
-        //         IsJumping = true;
-        //     }
-        // }
-        //
-        // // 反映
-        // if (FinalVelocityWorldApply.x != 0 || FinalVelocityWorldApply.y != 0 || FinalVelocityWorldApply.z != 0)
-        // {
-        //     transform.position += FinalVelocityWorldApply;
-        // }
-        //
-        // if(FallVelocityWorldApply != Vector3.zero)
-        // {
-        //     transform.position += FallVelocityWorldApply * Time.deltaTime;
-        // }
-        //
-        // if(JumpVelocityWorldApply != Vector3.zero)
-        // {
-        //     transform.position += JumpVelocityWorldApply * Time.deltaTime;
-        // }
-
-        // OnEdtiroExecute();
-
         // WorldDirecionに変換
         if (CurrentMoveSpeed != 0)
         {
@@ -252,9 +194,13 @@ public class PlayerController : MonoBehaviour
         FinalVelocityWorldApply = FinalInputVelocityWorld * Time.deltaTime;
         MovePerFrame = RequestAddSpeed(FinalVelocityWorldApply);
 
-        var frameMove = ColliderCheck(MovePerFrame);
-        transform.position += frameMove;
+        if (MovePerFrame.magnitude != 0)
+        {
+            var frameMove = CheckPhysic1(MovePerFrame);
+            transform.position += frameMove;
+        }
     }
+
     public Vector3 MovePerFrame;
     public Vector3 RequestAddSpeed(Vector3 spdAddFrame)
     {
@@ -271,76 +217,210 @@ public class PlayerController : MonoBehaviour
 
         return requestMove;
     }
-    public Vector3 ColliderCheck(Vector3 requestMove)
+    public float remaingDistance0;
+    public float remaingDistance1;
+    public float remaingDistance2;
+        private Vector3 CheckPhysic1(Vector3 move)
     {
-        var requestMoveDistance = requestMove.magnitude;
-        var requestMoveDir = requestMove.normalized;
+        const float HALF_SIZE = 0.5f;
+        const float RAY_BACK_DISTANCE = 0.01f;
+        const float FLOAT_AROUND = 0.0001f;
+        const float MAX_CHECK_DISTANCE = 10f;
+        var curPos = transform.position;
 
-        if (requestMoveDistance == 0)
+        var moveDir0 = move.normalized;
+        var moveDistance0 = move.magnitude;
+        var ray0 = new Ray(curPos - moveDir0 * RAY_BACK_DISTANCE, moveDir0);
+
+        var hits = Physics.SphereCastAll(ray0, HALF_SIZE, moveDistance0 + RAY_BACK_DISTANCE).Where(x => x.point != Vector3.zero).OrderBy(x => x.distance).ToList();
+
+        if(hits.Count >= 3)
         {
-            return Vector3.zero;
+            moveDistance0 = Mathf.Max(0, hits[0].distance - RAY_BACK_DISTANCE - FLOAT_AROUND);
+            // gizmo1 = curPos + moveDir0 * moveDistance0;
+            return moveDir0 * moveDistance0;
+        }
+        else if(hits.Count == 2)
+        {
+            // va
         }
 
-        const float MOVE_FLOAT_DISTANCE = 0.001f;
-        const float FLOAT_ROUND_OFF = 0.0001f;//　壁から絶対に離れている保証floatの丸目誤差補完用
-        const float MAX_CHECK_DISTANCE = 3f;
 
-        var firstRay = new Ray(transform.position - requestMoveDir * MOVE_FLOAT_DISTANCE, requestMoveDir);
-        if(Physics.SphereCast(firstRay, BODY_SIZE_HALF, out var hitInfo, MAX_CHECK_DISTANCE))
+        if (!Physics.SphereCast(ray0, HALF_SIZE, out var hit0, MAX_CHECK_DISTANCE))
         {
-            /*
-            |--FLOAT--|-----HALF-----|--→|WALL
-            */
-            // hitInfo.distanceが0.00099994
-            var hitDistance = hitInfo.distance - MOVE_FLOAT_DISTANCE;
-            var firstMoveResult = requestMoveDir * (requestMoveDistance - FLOAT_ROUND_OFF); ;
-
-            // 壁の中に刺さっている
-            if (hitDistance < 0)
-            {
-                
-            }
-
-            if(hitDistance >= requestMoveDistance)
-            {
-                return firstMoveResult;
-            }
-            
-
-            var projectionDistance = requestMoveDistance - hitDistance - FLOAT_ROUND_OFF;
-
-            if(projectionDistance < 0)
-            {
-                return firstMoveResult;
-            }
-            var forwardMove = requestMoveDir * hitDistance;
-            var forwardOrigin = transform.position + forwardMove;
-            var projection = Vector3.ProjectOnPlane(requestMoveDir, hitInfo.normal).normalized;
-            var projectionMove = forwardMove + projection * projectionDistance;
-
-            var secRay = new Ray(transform.position + forwardMove, projection);
-
-            if(Physics.SphereCast(secRay, BODY_SIZE_HALF, out var secHit, projectionDistance))
-            {
-                var secHitDistance = secHit.distance - MOVE_FLOAT_DISTANCE;
-
-                if (secHitDistance <= 0)
-                {
-                    return projectionMove;
-                }
-
-                var crossDirection = Vector3.Cross(hitInfo.normal, secHit.normal).normalized;
-                return projectionMove + crossDirection * (projectionDistance - secHitDistance);
-            }
-            else
-            {
-                return projectionMove;
-            }
+            // SetLinePos(normalLine0, Vector3.zero, Vector3.up);
+            return move;
         }
 
-        return requestMove;
+        var hitDistance0 = hit0.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
+        remaingDistance0 = moveDistance0 - hitDistance0;
 
+        // gizmo1 = curPos + move;
+        // SetLinePos(normalLine0, hit0.point, hit0.point + hit0.normal * 3);
+
+        // ヒット距離がmove距離より長いので、そのまま進むことができる
+        if (remaingDistance0 < 0)
+        {
+            return move;
+        }
+        
+
+        // そうでなければ、ヒットした手前まで移動する座標を作る
+        var hit0MoveResult = moveDir0 * hitDistance0;
+        var hit0TargetPos = curPos + hit0MoveResult;
+        // gizmo1 = hit0TargetPos;
+
+        // 横滑りの情報用意
+        var moveDir1 = Vector3.ProjectOnPlane(moveDir0, hit0.normal).normalized;
+        var moveDistance1 = remaingDistance0;
+        var ray1 = new Ray(hit0TargetPos - moveDir1 * RAY_BACK_DISTANCE, moveDir1);
+
+        // もしヒットしなかった時のResult用意
+        var hit1MoveResult = hit0MoveResult + moveDir1 * moveDistance1;
+        var hit1TargetPos = curPos + hit1MoveResult;
+        // gizmo2 = hit1TargetPos;
+
+        if (!Physics.SphereCast(ray1, HALF_SIZE, out var hit1, MAX_CHECK_DISTANCE))
+        {
+            // SetLinePos(normalLine1, Vector3.zero, Vector3.up);
+            return hit1MoveResult;
+        }
+
+        var hitDistance1 = hit1.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
+        remaingDistance1 = remaingDistance0 - hitDistance1;
+        // SetLinePos(normalLine1, hit1.point, hit1.point + hit1.normal * 3);
+
+        if (remaingDistance1 < 0)
+        {
+            return hit1MoveResult;
+        }
+        
+
+        hit1MoveResult = moveDir1 * hitDistance1;
+        hit1TargetPos = curPos + hit0MoveResult + hit1MoveResult;
+        // gizmo2 = hit1TargetPos;
+
+        var moveDir2a = Vector3.Cross(hit0.normal, hit1.normal).normalized;
+        var moveDir2b = Vector3.Cross(hit1.normal, hit0.normal).normalized;
+
+        var dot2aD = Vector3.Dot(moveDir2a, moveDir1);
+        var dot2bD = Vector3.Dot(moveDir2b, moveDir1);
+
+        var moveDir2 = Vector3.zero;
+        if (dot2aD > 0)
+        {
+            moveDir2 = moveDir2a;
+            // SetLinePos(LineRendererDir, hit1TargetPos, hit1TargetPos + moveDir2 * 5);
+        }
+        else if (dot2bD > 0)
+        {
+            moveDir2 = moveDir2b;
+            // SetLinePos(LineRendererDir, hit1TargetPos, hit1TargetPos + moveDir2 * 5);
+        }
+        else
+        {
+            // SetLinePos(LineRendererDir, Vector3.zero, Vector3.up);
+            moveDir2 = Vector3.zero;
+        }
+
+        var ray2 = new Ray(hit1TargetPos - moveDir2 * RAY_BACK_DISTANCE, moveDir2 * RAY_BACK_DISTANCE);
+        var hit2MoveResult = hit0MoveResult + hit1MoveResult + moveDir2 * remaingDistance1;
+        var hit2TargetPos = curPos + hit2MoveResult;
+        // gizmo3 = hit2TargetPos;
+
+        if (!Physics.SphereCast(ray2, HALF_SIZE, out var hit2, MAX_CHECK_DISTANCE))
+        {
+            // SetLinePos(normalLine2, Vector3.zero, Vector3.up);
+            return hit2MoveResult;
+        }
+
+        var hitDistance2 = hit2.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
+        remaingDistance2 = remaingDistance1 - hitDistance2;
+        // SetLinePos(normalLine2, hit2.point, hit2.point + hit2.normal * 3);
+
+        if (remaingDistance2 < 0)
+        {
+            return hit2MoveResult;
+        }
+
+        //3点タッチしてあれば、もう計算しない
+
+        hit2MoveResult = moveDir2 * hitDistance2;
+        hit2TargetPos = curPos + hit1MoveResult + hit2MoveResult;
+
+        // gizmo3 = hit2TargetPos;
+        return hit1MoveResult + hit2MoveResult;
     }
+    // public Vector3 ColliderCheck(Vector3 requestMove)
+    // {
+    //     var requestMoveDistance = requestMove.magnitude;
+    //     var requestMoveDir = requestMove.normalized;
+    //
+    //     if (requestMoveDistance == 0)
+    //     {
+    //         return Vector3.zero;
+    //     }
+    //
+    //     const float MOVE_FLOAT_DISTANCE = 0.001f;
+    //     const float FLOAT_ROUND_OFF = 0.0001f;//　壁から絶対に離れている保証floatの丸目誤差補完用
+    //     const float MAX_CHECK_DISTANCE = 3f;
+    //
+    //     var firstRay = new Ray(transform.position - requestMoveDir * MOVE_FLOAT_DISTANCE, requestMoveDir);
+    //     if(Physics.SphereCast(firstRay, BODY_SIZE_HALF, out var hitInfo, MAX_CHECK_DISTANCE))
+    //     {
+    //         /*
+    //         |--FLOAT--|-----HALF-----|--→|WALL
+    //         */
+    //         // hitInfo.distanceが0.00099994
+    //         var hitDistance = hitInfo.distance - MOVE_FLOAT_DISTANCE;
+    //         var firstMoveResult = requestMoveDir * (requestMoveDistance - FLOAT_ROUND_OFF); ;
+    //
+    //         // 壁の中に刺さっている
+    //         if (hitDistance < 0)
+    //         {
+    //             
+    //         }
+    //
+    //         if(hitDistance >= requestMoveDistance)
+    //         {
+    //             return firstMoveResult;
+    //         }
+    //         
+    //
+    //         var projectionDistance = requestMoveDistance - hitDistance - FLOAT_ROUND_OFF;
+    //
+    //         if(projectionDistance < 0)
+    //         {
+    //             return firstMoveResult;
+    //         }
+    //         var forwardMove = requestMoveDir * hitDistance;
+    //         var forwardOrigin = transform.position + forwardMove;
+    //         var projection = Vector3.ProjectOnPlane(requestMoveDir, hitInfo.normal).normalized;
+    //         var projectionMove = forwardMove + projection * projectionDistance;
+    //
+    //         var secRay = new Ray(transform.position + forwardMove, projection);
+    //
+    //         if(Physics.SphereCast(secRay, BODY_SIZE_HALF, out var secHit, projectionDistance))
+    //         {
+    //             var secHitDistance = secHit.distance - MOVE_FLOAT_DISTANCE;
+    //
+    //             if (secHitDistance <= 0)
+    //             {
+    //                 return projectionMove;
+    //             }
+    //
+    //             var crossDirection = Vector3.Cross(hitInfo.normal, secHit.normal).normalized;
+    //             return projectionMove + crossDirection * (projectionDistance - secHitDistance);
+    //         }
+    //         else
+    //         {
+    //             return projectionMove;
+    //         }
+    //     }
+    //
+    //     return requestMove;
+    //
+    // }
     // public Vector3 MoveAlongWall(Vector3 move)
     // {
     //     var curPos = transform.position;

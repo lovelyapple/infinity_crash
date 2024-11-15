@@ -152,7 +152,27 @@ public class RayTest : MonoBehaviour
             var hit21TargetPos = curPos + hit21MoveResult;
             gizmo3 = hit20TargetPos;
 
-            return hit21MoveResult;
+            if (!Physics.SphereCast(ray21, HALF_SIZE, out var hit22, MAX_CHECK_DISTANCE))
+            {
+                SetLinePos(normalLine2, Vector3.zero, Vector3.up);
+                return hit21MoveResult;
+            }
+
+            var hitDistance22 = hit22.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
+            var remainingDistance22 = remaingDistance1 - hitDistance22;
+            SetLinePos(normalLine2, hit22.point, hit22.point + hit22.normal * 3);
+
+            if (remainingDistance22 < 0)
+            {
+                return hit21MoveResult;
+            }
+            
+            hit21MoveResult = moveDir21 * hitDistance22;
+            hit21TargetPos = curPos + hit20MoveResult + hit21MoveResult;
+
+            gizmo3 = hit21TargetPos;
+            return hit20MoveResult + hit21MoveResult;
+
         }
 
 
@@ -282,7 +302,7 @@ public class RayTest : MonoBehaviour
             CurrentGroundTouchState = GroundTouchState.Stationary;
             return moveDir0 * moveDistance0;
         }
-        else if(hits.Count == 2)
+        else if (hits.Count == 2)
         {
             var hit20 = hits[0];
             var hit21 = hits[1];
@@ -320,9 +340,9 @@ public class RayTest : MonoBehaviour
                 SetLinePos(LineRendererDir, Vector3.zero, Vector3.up);
                 moveDir21 = Vector3.zero;
             }
-            
-            groundDegree =  90 - Vector3.Angle(Vector3.down, moveDir21);
-            if (groundDegree < GroundFrictionlessAngle  || groundDegree == 90f)
+
+            groundDegree = 90 - Vector3.Angle(Vector3.down, moveDir21);
+            if (groundDegree < GroundFrictionlessAngle || groundDegree == 90f)
             {
                 CurrentGroundTouchState = GroundTouchState.Stationary;
                 return Vector3.zero;
@@ -333,8 +353,29 @@ public class RayTest : MonoBehaviour
             var hit21TargetPos = curPos + hit21MoveResult;
             gizmo3 = hit20TargetPos;
 
-            CurrentGroundTouchState = GroundTouchState.Sliding;
-            return hit21MoveResult;
+            if (!Physics.SphereCast(ray21, HALF_SIZE, out var hit22, MAX_CHECK_DISTANCE))
+            {
+                SetLinePos(normalLine2, Vector3.zero, Vector3.up);
+                CurrentGroundTouchState = GroundTouchState.Sliding;
+                return hit21MoveResult;
+            }
+
+            var hitDistance22 = hit22.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
+            var remainingDistance22 = remaingDistance1 - hitDistance22;
+            SetLinePos(normalLine2, hit22.point, hit22.point + hit22.normal * 3);
+
+            if (remainingDistance22 < 0)
+            {
+                CurrentGroundTouchState = GroundTouchState.Sliding;
+                return hit21MoveResult;
+            }
+
+            hit21MoveResult = moveDir21 * hitDistance22;
+            hit21TargetPos = curPos + hit20MoveResult + hit21MoveResult;
+
+            gizmo3 = hit21TargetPos;
+            CurrentGroundTouchState = GroundTouchState.Stationary;
+            return hit20MoveResult + hit21MoveResult;
         }
 
 
