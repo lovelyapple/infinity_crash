@@ -89,7 +89,7 @@
       <workItem from="1729135942379" duration="1982000" />
       <workItem from="1730432497806" duration="12340000" />
       <workItem from="1731662434821" duration="2843000" />
-      <workItem from="1731666489913" duration="1696000" />
+      <workItem from="1731666489913" duration="2934000" />
     </task>
     <servers />
   </component>
@@ -100,5 +100,24 @@
   <component name="UnityUnitTestConfiguration" currentTestLauncher="EditMode" />
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="DotNet Breakpoints">
+          <url>file://$PROJECT_DIR$/Assets/PlayerControllerTest/RayTest.cs</url>
+          <line>60</line>
+          <properties documentPath="C:\projects\infinity_crash\Assets\PlayerControllerTest\RayTest.cs" initialLine="60" containingFunctionPresentation="method 'Update'">
+            <startOffsets>
+              <option value="2296" />
+            </startOffsets>
+            <endOffsets>
+              <option value="2316" />
+            </endOffsets>
+          </properties>
+          <option name="timeStamp" value="8" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

@@ -52,8 +52,18 @@ public class RayTest : MonoBehaviour
         }
         else
         {
-               var vec = CheckGravity(Vector3.down * gravity * Time.deltaTime);
+            var prevState = CurrentGroundTouchState;
+            DirectDownSpeed = Mathf.Min(MAX_GRAVITY, DirectDownSpeed + GRAVITY * Time.deltaTime);
+            var vec = CheckGravity(Vector3.down * DirectDownSpeed * Time.deltaTime);
+            
+            // 字面にタッチした瞬間だけ、重力加速度を0にする（疑似反発力）
+            if (prevState == GroundTouchState.Floating && prevState != CurrentGroundTouchState)
+            {
+                DirectDownSpeed = 0;
+            }
+            
             transform.position += vec;
+            
         }
     }
     public enum GroundTouchState
@@ -66,7 +76,7 @@ public class RayTest : MonoBehaviour
     public GroundTouchState CurrentGroundTouchState;
     public float DirectDownSpeed = 0;
     public bool IsSim = false;
-    public float gravity = 0;
+    public float GRAVITY = 3f;
     public float MAX_GRAVITY = 9.8f;
     public float GroundFrictionlessAngle = 30;
     public float groundDegree;
