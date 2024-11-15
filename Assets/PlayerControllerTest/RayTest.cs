@@ -83,9 +83,6 @@ public class RayTest : MonoBehaviour
     Vector3 gizmo1;
     Vector3 gizmo2;
     Vector3 gizmo3;
-    public float remaingDistance0;
-    public float remaingDistance1;
-    public float remaingDistance2;
     public LineRenderer normalLine0;
     public LineRenderer normalLine1;
     public LineRenderer normalLine2;
@@ -159,7 +156,7 @@ public class RayTest : MonoBehaviour
             }
 
             var hitDistance22 = hit22.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
-            var remainingDistance22 = remaingDistance1 - hitDistance22;
+            var remainingDistance22 = remainingDistance21 - hitDistance22;
             SetLinePos(normalLine2, hit22.point, hit22.point + hit22.normal * 3);
 
             if (remainingDistance22 < 0)
@@ -183,7 +180,7 @@ public class RayTest : MonoBehaviour
         }
 
         var hitDistance0 = hit0.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
-        remaingDistance0 = moveDistance0 - hitDistance0;
+        var remaingDistance0 = moveDistance0 - hitDistance0;
 
         gizmo1 = curPos + move;
         SetLinePos(normalLine0, hit0.point, hit0.point + hit0.normal * 3);
@@ -217,7 +214,7 @@ public class RayTest : MonoBehaviour
         }
 
         var hitDistance1 = hit1.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
-        remaingDistance1 = remaingDistance0 - hitDistance1;
+        var remaingDistance1 = remaingDistance0 - hitDistance1;
         SetLinePos(normalLine1, hit1.point, hit1.point + hit1.normal * 3);
 
         if (remaingDistance1 < 0)
@@ -265,7 +262,7 @@ public class RayTest : MonoBehaviour
         }
 
         var hitDistance2 = hit2.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
-        remaingDistance2 = remaingDistance1 - hitDistance2;
+        var remaingDistance2 = remaingDistance1 - hitDistance2;
         SetLinePos(normalLine2, hit2.point, hit2.point + hit2.normal * 3);
 
         if (remaingDistance2 < 0)
@@ -361,7 +358,7 @@ public class RayTest : MonoBehaviour
             }
 
             var hitDistance22 = hit22.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
-            var remainingDistance22 = remaingDistance1 - hitDistance22;
+            var remainingDistance22 = remainingDistance21 - hitDistance22;
             SetLinePos(normalLine2, hit22.point, hit22.point + hit22.normal * 3);
 
             if (remainingDistance22 < 0)
@@ -387,7 +384,7 @@ public class RayTest : MonoBehaviour
         }
 
         var hitDistance0 = hit0.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
-        remaingDistance0 = moveDistance0 - hitDistance0;
+        var remaingDistance0 = moveDistance0 - hitDistance0;
 
         gizmo1 = curPos + move;
         SetLinePos(normalLine0, hit0.point, hit0.point + hit0.normal * 3);
@@ -433,7 +430,7 @@ public class RayTest : MonoBehaviour
         }
 
         var hitDistance1 = hit1.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
-        remaingDistance1 = remaingDistance0 - hitDistance1;
+        var remaingDistance1 = remaingDistance0 - hitDistance1;
         SetLinePos(normalLine1, hit1.point, hit1.point + hit1.normal * 3);
 
         if (remaingDistance1 < 0)
@@ -490,7 +487,7 @@ public class RayTest : MonoBehaviour
         }
 
         var hitDistance2 = hit2.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
-        remaingDistance2 = remaingDistance1 - hitDistance2;
+        var remaingDistance2 = remaingDistance1 - hitDistance2;
         SetLinePos(normalLine2, hit2.point, hit2.point + hit2.normal * 3);
 
         if (remaingDistance2 < 0)
