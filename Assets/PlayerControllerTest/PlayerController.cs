@@ -422,12 +422,7 @@ public class PlayerController : MonoBehaviour
         // gizmo3 = hit2TargetPos;
         return hit1MoveResult + hit2MoveResult;
     }
-    public enum GroundTouchState
-    {
-        Floating,
-        Sliding,
-        Stationary,
-    }
+
 
     public GroundTouchState CurrentGroundTouchState;
     private Vector3 CheckGravity(Vector3 move)

@@ -12,31 +12,26 @@ public class GameCharaConttrollerNew : MonoBehaviour
     public Camera mainCamera;
     public float maxDistance = 500f; // レイキャストの最大距離
     public Transform CameraTransform;
-    Rigidbody _rigidbody;
     SphereCollider _collider;
-    float _distToGround;
 
     private float xRotation = 0f;
 
-    public Vector3 InputMoveSpeed;
-    public bool IsInputing;
 
-    public bool IsGrounded = false;
+    public bool IsInputing => InputtingVector.x != 0 || InputtingVector.z != 0;
+
     public bool CanJump = false;
     public bool CanWallJump = false;
-    public bool HasJumpInertia = false;
-    public Vector3 JumpInertia;
     public List<SkillBase> Skills = new List<SkillBase>();
     public bool HasSpeedRunSKill => Skills.Any(x => x.SkillType == SkillType.SpeedRun);
     public int SuperJumpCount => Skills.Count(x => x.SkillType == SkillType.SuperJump);
     public int RaycastMask;
-    public Action<List<SkillBase>> OnUpdateSkills;
+    public float JumpTimeLeft = 3;
+    public bool AutoJump = false;
+    public bool IsJumped = false;
     public bool CanMove = false;
     void Awake()
     {
-        _rigidbody = GetComponent<Rigidbody>();
         _collider = GetComponent<SphereCollider>();
-        _distToGround = _collider.bounds.extents.y;
 
         RaycastMask = 1 << LayerMask.NameToLayer("FieldIcon");
 
@@ -71,12 +66,20 @@ public class GameCharaConttrollerNew : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         CanMove = false;
     }
+    public Vector3Int InputtingVector;
+    public Vector3 InputMoveSpeedLocal;
+    public Vector3 InputMoveSpeedWorld;
+    public float REVERSE_INPUT_FRICTION = 0.98f;
+    public float MEAN_INPUT_POWER = 0.00001f;
+    public GroundTouchState CurrentGroundTouchState;
+    public float DirectDownSpeed;
+    public float FootGroundAngle;
+    public float FloatingTime;
     // Update is called once per frame
     void Update()
     {
         // マウスのX軸とY軸の入力を取得
         var mouseSensitivity = CurGameSettings.CurCharacterSettings.MouseSensitivity;
-        var jumpForce  = CurGameSettings.CurCharacterSettings.JumpForce;
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
 
@@ -92,7 +95,207 @@ public class GameCharaConttrollerNew : MonoBehaviour
             transform.Rotate(Vector3.up * mouseX);
         }
 
-        CheckIsGrounded();
+        if(!CanMove)
+        {
+            return;
+        }
+
+        var halfSize = _collider.radius - 0.1f;
+        var jumpForce = CurGameSettings.CurCharacterSettings.JumpForce;
+        var inputForce = CurGameSettings.CurCharacterSettings.InputForceVelocity * Time.deltaTime;
+        var maxInputSpeedThisFrame = CurGameSettings.CurCharacterSettings.MaxSpeedNormal * Time.deltaTime;
+        var maxBuddedSpeedThisFrame = CurGameSettings.CurCharacterSettings.MaxSpeedBuffed * Time.deltaTime;
+
+
+        if (Input.GetKey(KeyCode.W))
+        {
+            InputtingVector.z = 1;
+        }
+        else if (Input.GetKey(KeyCode.S))
+        {
+            InputtingVector.z = -1;
+        }
+        else
+        {
+            InputtingVector.z = 0;
+        }
+
+        if (Input.GetKey(KeyCode.A))
+        {
+            InputtingVector.x = -1;
+        }
+        else if (Input.GetKey(KeyCode.D))
+        {
+            InputtingVector.x = 1;
+        }
+        else
+        {
+            InputtingVector.x = 0;
+        }
+
+        // 重力計算
+        var prevState = CurrentGroundTouchState;
+        DirectDownSpeed = Mathf.Min(CurGameSettings.CurCharacterSettings.MaxGravitySpeed,
+        DirectDownSpeed + CurGameSettings.CurCharacterSettings.GravitySpeed * Time.deltaTime);
+
+        var fall = CollisionUtility.FallCheck(Vector3.down * DirectDownSpeed * Time.deltaTime,
+        transform.position, halfSize,
+        CurGameSettings.CurCharacterSettings.FallFootSlideDegree,
+        out FootGroundAngle, out CurrentGroundTouchState);
+
+        // 地面にタッチした瞬間だけ、重力加速度を0にする（疑似反発力）
+        if ((prevState == GroundTouchState.Floating && prevState != CurrentGroundTouchState) || 
+            (prevState == GroundTouchState.Stationary && prevState == CurrentGroundTouchState))
+        {
+            DirectDownSpeed = 0;
+        }
+
+        if(CurrentGroundTouchState == GroundTouchState.Floating)
+        {
+            FloatingTime += Time.deltaTime;
+        }
+        else
+        {
+            FloatingTime = 0;
+        }
+
+        CanJump = FloatingTime <= CurGameSettings.CurCharacterSettings.FloatingJumpTimeLimie;
+        transform.position += fall;
+
+        // InputMoveSpeedLocal
+        if (IsInputing)
+        {
+            InputMoveSpeedLocal = transform.InverseTransformDirection(InputMoveSpeedWorld);
+            if (InputtingVector.z != 0)
+            {
+                if (InputtingVector.z > 0)
+                {
+                    if (InputMoveSpeedLocal.z < 0)
+                    {
+                        InputMoveSpeedLocal.z *= REVERSE_INPUT_FRICTION;
+
+                        if (InputMoveSpeedLocal.z > -MEAN_INPUT_POWER)
+                        {
+                            InputMoveSpeedLocal.z = 0;
+                        }
+                    }
+
+                    InputMoveSpeedLocal.z += inputForce;
+                }
+                else
+                {
+                    if (InputMoveSpeedLocal.z > 0)
+                    {
+                        InputMoveSpeedLocal.z *= REVERSE_INPUT_FRICTION;
+
+                        if (InputMoveSpeedLocal.z < MEAN_INPUT_POWER)
+                        {
+                            InputMoveSpeedLocal.z = 0;
+                        }
+                    }
+
+                    InputMoveSpeedLocal.z -= inputForce;
+                }
+            }
+            else
+            {
+                InputMoveSpeedLocal.z *= REVERSE_INPUT_FRICTION;
+
+                if (InputMoveSpeedLocal.z * InputMoveSpeedLocal.z < MEAN_INPUT_POWER * MEAN_INPUT_POWER)
+                {
+                    InputMoveSpeedLocal.z = 0;
+                }
+            }
+
+            if (InputtingVector.x != 0)
+            {
+                if (InputtingVector.x > 0)
+                {
+                    if (InputMoveSpeedLocal.x < 0)
+                    {
+                        InputMoveSpeedLocal.x *= REVERSE_INPUT_FRICTION;
+
+                        if (InputMoveSpeedLocal.x > -MEAN_INPUT_POWER)
+                        {
+                            InputMoveSpeedLocal.x = 0;
+                        }
+                    }
+
+                    InputMoveSpeedLocal.x += inputForce;
+                }
+                else
+                {
+                    if (InputMoveSpeedLocal.x > 0)
+                    {
+                        InputMoveSpeedLocal.x *= REVERSE_INPUT_FRICTION;
+
+                        if (InputMoveSpeedLocal.x < MEAN_INPUT_POWER)
+                        {
+                            InputMoveSpeedLocal.x = 0;
+                        }
+                    }
+
+                    InputMoveSpeedLocal.x -= inputForce;
+                }
+            }
+            else
+            {
+                InputMoveSpeedLocal.x *= REVERSE_INPUT_FRICTION;
+
+                if (InputMoveSpeedLocal.x * InputMoveSpeedLocal.x < MEAN_INPUT_POWER * MEAN_INPUT_POWER)
+                {
+                    InputMoveSpeedLocal.x = 0;
+                }
+            }
+        }
+        else
+        {
+            if (InputMoveSpeedLocal.x != 0 || InputMoveSpeedLocal.z != 0)
+            {
+                InputMoveSpeedLocal *= REVERSE_INPUT_FRICTION;
+
+                if(InputMoveSpeedLocal.sqrMagnitude <= MEAN_INPUT_POWER * MEAN_INPUT_POWER)
+                {
+                    InputMoveSpeedLocal = Vector3.zero;
+                }
+            }
+        }
+
+        // Input加速度の最大限を求める
+        if (InputMoveSpeedLocal.x != 0 || InputMoveSpeedLocal.z != 0)
+        {
+            InputMoveSpeedLocal.y = 0;
+            CurrentInputSpeed = InputMoveSpeedLocal.sqrMagnitude;
+            var maxSpeed = HasSpeedRunSKill ?  maxBuddedSpeedThisFrame : maxInputSpeedThisFrame;
+            var powerScale = maxSpeed / CurrentInputSpeed;
+
+            if (powerScale < 1)
+            {
+                InputMoveSpeedLocal.x *= powerScale;
+                InputMoveSpeedLocal.z *= powerScale;
+            }
+
+            InputMoveSpeedWorld = transform.TransformDirection(InputMoveSpeedLocal);
+            InputMoveSpeedWorld = CollisionUtility.MoveCheck(InputMoveSpeedWorld, transform.position, halfSize);
+        }
+        else
+        {
+            if (InputMoveSpeedWorld.x != 0 || InputMoveSpeedLocal.z != 0)
+            {
+                InputMoveSpeedWorld *= REVERSE_INPUT_FRICTION;
+
+                if (InputMoveSpeedWorld.sqrMagnitude <= MEAN_INPUT_POWER * MEAN_INPUT_POWER)
+                {
+                    InputMoveSpeedWorld = Vector3.zero;
+                }
+            }
+        }
+
+        if (InputMoveSpeedWorld.x != 0 || InputMoveSpeedLocal.z != 0)
+        {
+            transform.position += InputMoveSpeedWorld;
+        }
+
 
         if (CanMove)
         {
@@ -137,12 +340,6 @@ public class GameCharaConttrollerNew : MonoBehaviour
             }
         }
 
-        // や、今考えない
-        if(IsHoldingWall)
-        {
-
-        }
-
         foreach (var skill in Skills)
         {
             skill.OnSkillpdate();
@@ -175,224 +372,10 @@ public class GameCharaConttrollerNew : MonoBehaviour
             }
         }
     }
-    public float JumpTimeLeft = 3;
-    public bool AutoJump = false;
-    public bool IsJumped = false;
-    public Slider WallPackPowerSlider;
-    public float WallJumpNeedPower;
-    public bool IsHoldingWall;
-    public float WallPackPowerRecover = 20f;
-    private void Jump(float jumpForce)
-    {
-        _rigidbody.velocity = new Vector3(_rigidbody.velocity.x, _rigidbody.velocity.y + jumpForce, _rigidbody.velocity.z);
-        JumpInertia = _rigidbody.velocity;
-
-        IsJumped = true;
-    }
-
+    public float CurrentInputSpeed;
     void FixedUpdate()
     {
-        IsInputing = false;
-        var inputForce = CurGameSettings.CurCharacterSettings.InputForce;
-        if (Input.GetKey(KeyCode.W))
-        {
-            InputMoveSpeed.z = inputForce * Time.deltaTime;
-            IsInputing = true;
-        }
-        else if (Input.GetKey(KeyCode.S))
-        {
-            InputMoveSpeed.z = -inputForce * Time.deltaTime;
-            IsInputing = true;
-        }
-        else
-        {
-            InputMoveSpeed.z = 0;
-        }
 
-        if (Input.GetKey(KeyCode.A))
-        {
-            InputMoveSpeed.x = -inputForce * Time.deltaTime;
-            IsInputing = true;
-        }
-        else if (Input.GetKey(KeyCode.D))
-        {
-
-            InputMoveSpeed.x = inputForce * Time.deltaTime;
-            IsInputing = true;
-        }
-        else
-        {
-            InputMoveSpeed.x = 0;
-        }
-
-        if (IsInputing)
-        {
-            InputMoveSpeed.y = 0;
-        }
-        else
-        {
-            InputMoveSpeed = Vector3.zero;
-        }
-
-        RaycastHit hit;
-        // オブジェクトの真下にRaycastを撃って地面の法線を取得
-        if (Physics.Raycast(transform.position, Vector3.down, out hit, 0.52f))
-        {
-            Vector3 groundNormal = hit.normal;
-            // 法線ベクトルと上向きベクトルの角度を計算
-            float slopeAngle = Vector3.Angle(groundNormal, Vector3.up);
-
-            // 傾斜角が設定した最大角度を超えた場合のみ滑るようにする
-            if (slopeAngle > maxSlopeAngle)
-            {
-                _rigidbody.useGravity = true;
-            }
-            else if(_rigidbody.velocity.y < 0)
-            {
-                // _rigidbody.velocity = new Vector3(_rigidbody.velocity.x, 0, _rigidbody.velocity.z); // 滑らないように速度をゼロにする
-                _rigidbody.useGravity = false; // 重力をオフにする
-            }
-        }else
-        {
-            _rigidbody.useGravity = true;
-        }
-
-        if (CanMove && (InputMoveSpeed.x != 0 || InputMoveSpeed.z != 0))
-        {
-            velocity = _rigidbody.velocity;
-            var inputCache = InputMoveSpeed;
-            inputCache.y = 0;
-
-            if (HasSpeedRunSKill)
-            {
-                inputCache *= 2f;
-            }
-
-            _rigidbody.AddRelativeForce(inputCache, ForceMode.Force);
-
-            curVelocityPower = velocity.x * velocity.x + velocity.z * velocity.z;
-
-            var worldDorcetion = transform.TransformDirection(InputMoveSpeed);
-  
-            if(InputMoveSpeed.x == 0)
-            {
-                var localDirection = transform.InverseTransformDirection(velocity);
-                if (localDirection.x > 0)
-                {
-                    localDirection.x -= ReFriction * Time.deltaTime;
-                }
-                else if(localDirection.x < 0)
-                {
-                    localDirection.x += ReFriction * Time.deltaTime;
-                }
-                velocity = transform.TransformDirection(localDirection);
-                _rigidbody.velocity = velocity;
-            }
-            else
-            {
-                var localDirection = transform.InverseTransformDirection(velocity);
-                if (InputMoveSpeed.x > 0  && localDirection.x < 0)
-                {
-                    localDirection.x += ReFriction * Time.deltaTime;
-                    velocity = transform.TransformDirection(localDirection);
-                    _rigidbody.velocity = velocity;
-                }
-                else if (InputMoveSpeed.x < 0 && localDirection.x > 0)
-                {
-                    localDirection.x -= ReFriction * Time.deltaTime;
-                    velocity = transform.TransformDirection(localDirection);
-                    _rigidbody.velocity = velocity;
-                }
-            }
-            if (InputMoveSpeed.z == 0)
-            {
-                var localDirection = transform.InverseTransformDirection(velocity);
-                if (localDirection.z > 0)
-                {
-                    localDirection.z -= ReFriction * Time.deltaTime;
-                }
-                else if (localDirection.z < 0)
-                {
-                    localDirection.z += ReFriction * Time.deltaTime;
-                }
-                velocity = transform.TransformDirection(localDirection);
-            }
-            else
-            {
-                var localDirection = transform.InverseTransformDirection(velocity);
-                if (InputMoveSpeed.z > 0 && localDirection.z < 0)
-                {
-                    localDirection.z += ReFriction * Time.deltaTime;
-                    velocity = transform.TransformDirection(localDirection);
-                    _rigidbody.velocity = velocity;
-                }
-                else if (InputMoveSpeed.z < 0 && localDirection.z > 0)
-                {
-                    localDirection.z -= ReFriction * Time.deltaTime;
-                    velocity = transform.TransformDirection(localDirection);
-                    _rigidbody.velocity = velocity;
-                }
-            }
-
-            var maxPower = 0f;
-            if (HasSpeedRunSKill)
-            {
-                maxPower = CurGameSettings.CurCharacterSettings.MaxSpeedNormal * CurGameSettings.CurCharacterSettings.MaxSpeedNormal;
-            }
-            else
-            {
-                maxPower = CurGameSettings.CurCharacterSettings.MaxSpeedBuffed * CurGameSettings.CurCharacterSettings.MaxSpeedBuffed;
-            }
-
-            if (maxPower < curVelocityPower)
-            {
-                velocity.x = maxPower / curVelocityPower * velocity.x;
-                velocity.z = maxPower / curVelocityPower * velocity.z;
-                _rigidbody.velocity = velocity;
-            }
-
-            curVelocityPower = Mathf.Sqrt(curVelocityPower);
-
-        }
-        else if(IsGrounded)
-        {
-            if(IsJumped)
-            {
-                IsJumped = false;
-                return;
-            }
-
-            _rigidbody.velocity *= 0.85f;
-        }
-
-        velocityLocal = transform.InverseTransformDirection(_rigidbody.velocity);
-    }
-    public Vector3 velocity;
-    public Vector3 velocityLocal;
-    public float curVelocityPower;
-    
-    public float ReFriction = 1f;
-    public float maxSlopeAngle = 30;
-
-    bool CheckIsGrounded()
-    {
-        float radius = _collider.radius - 0.1f;
-
-        // 指定した方向にCapsuleCastを実行
-        IsGrounded = Physics.SphereCast(transform.position, radius, Vector3.down, out var hit, 0.2f) && hit.point.y < transform.position.y;
-
-        var hits = Physics.SphereCastAll(transform.position, _collider.radius, Vector3.down, 0.4f);
-        CanJump = IsGrounded || hits.Any(x => x.transform != null && x.transform.gameObject.tag != "Player" && x.point.y < transform.position.y);
-        CanWallJump = IsGrounded || hits.Any(x =>x.transform != null && x.transform.gameObject.tag != "Player" && x.point.y < transform.position.y);
-        CanWallJump = false;
-
-        if (IsGrounded)
-        {
-            JumpInertia = Vector3.zero;
-            HasJumpInertia = false;
-        }
-
-        return IsGrounded;
     }
     public void OnCollisionEnter(Collision col)
     {
@@ -444,7 +427,6 @@ public class GameCharaConttrollerNew : MonoBehaviour
             UITaskGetFxSpawner.CreateOne(scorePoint.ScoreType);
         }
     }
-
     public bool AddSkillPool(SkillBase skillBase)
     {
         if (Skills.Any(x => x.SkillType == skillBase.SkillType
@@ -481,5 +463,32 @@ public class GameCharaConttrollerNew : MonoBehaviour
     {
         Skills.Remove(skill);
         GameHUDController.Instance.UpdateSkills(Skills);
+    }
+
+    public bool IsCheckTouching;
+    // bool CheckIsGrounded()
+    // {
+    //     float radius = _collider.radius - 0.1f;
+
+    //     // 指定した方向にCapsuleCastを実行
+    //     IsCheckTouching = Physics.SphereCast(transform.position, radius, Vector3.down, out var hit, 0.2f) && hit.point.y < transform.position.y;
+
+    //     var hits = Physics.SphereCastAll(transform.position, _collider.radius, Vector3.down, 0.4f);
+    //     IsCheckTouching = IsCheckTouching || hits.Any(x => x.transform != null && x.transform.gameObject.tag != "Player" && x.point.y < transform.position.y);
+    //     // CanWallJump = IsGrounded || hits.Any(x => x.transform != null && x.transform.gameObject.tag != "Player" && x.point.y < transform.position.y);
+    //     // CanWallJump = false;
+
+    //     if (IsCheckTouching)
+    //     {
+    //         // JumpInertia = Vector3.zero;
+    //         // HasJumpInertia = false;
+    //     }
+
+    //     return IsCheckTouching;
+    // }
+    private void Jump(float jumpForce)
+    {
+        IsJumped = true;
+        DirectDownSpeed -= jumpForce;
     }
 }

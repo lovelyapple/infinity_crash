@@ -193,7 +193,7 @@ public class GameCharaConttroller : MonoBehaviour
     void FixedUpdate()
     {
         IsInputing = false;
-        var inputForce = CurGameSettings.CurCharacterSettings.InputForce;
+        var inputForce = CurGameSettings.CurCharacterSettings.InputForceVelocity;
         if (Input.GetKey(KeyCode.W))
         {
             InputMoveSpeed.z = inputForce * Time.deltaTime;
@@ -430,7 +430,7 @@ public class GameCharaConttroller : MonoBehaviour
             }
 
             var skill = GameSkillChooser.CreateSkill(settingData);
-            skill.Initialize(settingData, this, this.gameObject.transform);
+            // skill.Initialize(settingData, this, this.gameObject.transform);
             if (AddSkillPool(skill))
             {
                 GameHUDController.Instance.UpdateSkills(Skills);

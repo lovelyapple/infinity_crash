@@ -16,7 +16,7 @@ public class GameMainObject : MonoSingletoneBase<GameMainObject>
             return _depthOfField;
         }
     }
-    public GameCharaConttroller GameCharaController;
+    public GameCharaConttrollerNew GameCharaController;
     Coroutine _startGameCoroutine;
     public void RequestStartGame()
     {

@@ -11,7 +11,7 @@ public class SkillSpeedRun : SkillBase
     private const float fillImageChargeTime = 0.5f;
     private Coroutine _fillImageCorutine = null;
     private List<Image> _fillImages;
-    public override void Initialize(SkillSettingData settingData, GameCharaConttroller player, Transform fieldObjTransform)
+    public override void Initialize(SkillSettingData settingData, GameCharaConttrollerNew player, Transform fieldObjTransform)
     {
         base.Initialize(settingData, player, fieldObjTransform);
         _prevFov = Camera.main.fieldOfView;

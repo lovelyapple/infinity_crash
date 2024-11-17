@@ -44,9 +44,9 @@ public class SkillBase
     public SkillSettingData _settingData;
     private bool _isRuning = false;
     public bool IsFinished = false;
-    private GameCharaConttroller _player;
+    private GameCharaConttrollerNew _player;
     private Transform _fieldTransform;
-    public virtual void Initialize(SkillSettingData settingData, GameCharaConttroller player, Transform fieldObjTransform)
+    public virtual void Initialize(SkillSettingData settingData, GameCharaConttrollerNew player, Transform fieldObjTransform)
     {
         _settingData = settingData;
         _player = player;

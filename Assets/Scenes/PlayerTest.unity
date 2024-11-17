@@ -1350,9 +1350,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3bea1da43ecf448c1a3f71e82b5f06af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  FALL_GRAVITY: 0
+  FALL_GRAVITY: 3
   JUMP_GRAVITY: 0
-  MAX_GRAVITY_SPEED: 20
+  MAX_GRAVITY_SPEED: 10
   GROUND_SLIDE_DEGREE: 45
   HEAD_SLIDE_DEEGREE: 75
   JUMP_POWER: 10
@@ -1361,15 +1361,11 @@ MonoBehaviour:
   MAX_HOR_INPUT_SPEED: 3
   DRAG_VALUE: 0.97
   MIN_MOVE_POWER: 0.1
-  CurrentGroundTouchState: 0
   UserInputDicreionLocal: {x: 0, y: 0, z: 0}
   CurrentInputMoveLocal: {x: 0, y: 0, z: 0}
   CurrentMoveSpeed: 0
   FinalInputVelocityWorld: {x: 0, y: 0, z: 0}
   FinalVelocityWorldApply: {x: 0, y: 0, z: 0}
-  FallVelocityWorldApply: {x: 0, y: 0, z: 0}
-  JumpVelocityWorldApply: {x: 0, y: 0, z: 0}
-  IsJumping: 0
   _cmemraTransform: {fileID: 269408363}
   AllowRotate: 1
   MouseSensitivity: 3
@@ -1377,7 +1373,9 @@ MonoBehaviour:
   moveLine: {fileID: 789938999}
   fixLine: {fileID: 718746326}
   hitNormalLine: {fileID: 567174727}
+  DirectDownSpeed: 0
   MovePerFrame: {x: 0, y: 0, z: 0}
+  CurrentGroundTouchState: 0
 --- !u!1 &871649153
 GameObject:
   m_ObjectHideFlags: 0
