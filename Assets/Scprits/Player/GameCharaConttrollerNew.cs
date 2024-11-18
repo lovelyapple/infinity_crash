@@ -71,6 +71,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
     public Vector3 InputMoveSpeedWorld;
     public float REVERSE_INPUT_FRICTION = 0.98f;
     public float MEAN_INPUT_POWER = 0.00001f;
+    public float GROUND_TOUCH_SE_PLAY_CONDITION_INTERVAL = 1f;
     public GroundTouchState CurrentGroundTouchState;
     public float DirectDownSpeed;
     public float FootGroundAngle;
@@ -137,11 +138,12 @@ public class GameCharaConttrollerNew : MonoBehaviour
         var prevState = CurrentGroundTouchState;
         DirectDownSpeed = Mathf.Min(CurGameSettings.CurCharacterSettings.MaxGravitySpeed,
         DirectDownSpeed + CurGameSettings.CurCharacterSettings.GravitySpeed * Time.deltaTime);
+        var groundTag = "";
 
         var fall = CollisionUtility.FallCheck(Vector3.down * DirectDownSpeed * Time.deltaTime,
         transform.position, halfSize,
         CurGameSettings.CurCharacterSettings.FallFootSlideDegree,
-        out FootGroundAngle, out CurrentGroundTouchState);
+        out FootGroundAngle, out CurrentGroundTouchState, out groundTag);
 
         // 地面にタッチした瞬間だけ、重力加速度を0にする（疑似反発力）
         if ((prevState == GroundTouchState.Floating && prevState != CurrentGroundTouchState) || 
@@ -150,7 +152,15 @@ public class GameCharaConttrollerNew : MonoBehaviour
             DirectDownSpeed = 0;
         }
 
-        if(CurrentGroundTouchState == GroundTouchState.Floating)
+        if (prevState == GroundTouchState.Floating && prevState != CurrentGroundTouchState)
+        {
+            if(FloatingTime > GROUND_TOUCH_SE_PLAY_CONDITION_INTERVAL && !string.IsNullOrEmpty(groundTag) && groundTag != "WaterField")
+            {
+                SoundManager.Instance.PlayOneShot(OneShotSeName.Fall_Touching_Ground);
+            }
+        }
+
+        if (CurrentGroundTouchState == GroundTouchState.Floating)
         {
             FloatingTime += Time.deltaTime;
         }
@@ -307,6 +317,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
                     {
                         var skill = Skills.FirstOrDefault(x => x.SkillType == SkillType.SuperJump);
                         skill.OnSkillFire();
+                        SoundManager.Instance.PlayOneShot(OneShotSeName.Super_jump);
                         Jump(SkillSuperJump.SuperJumpPower);
                     }
                 }
@@ -398,10 +409,12 @@ public class GameCharaConttrollerNew : MonoBehaviour
         else if (collider.gameObject.tag == "JumpBoard")
         {
             var jumpPower = collider.gameObject.GetComponent<JumpBoard>().JumpPower;
+            SoundManager.Instance.PlayOneShot(OneShotSeName.Super_jump);
             Jump(jumpPower);
         }
         else if (collider.gameObject.tag == "FieldSkill")
         {
+            SoundManager.Instance.PlayOneShot(OneShotSeName.Skill_Get);
             var skillObj = collider.gameObject.GetComponent<FieldSkill>();
             skillObj.RequestTouch();
 

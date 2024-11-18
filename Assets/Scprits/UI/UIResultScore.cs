@@ -9,7 +9,7 @@ public class UIResultScore : MonoBehaviour
     [SerializeField] private TextMeshProUGUI ScoreText;
     Vector3 _defaultScale;
     float perFormeScale = 1.2f;
-    public void BeforeSet()
+    public void Awake()
     {
         _defaultScale = ScoreText.rectTransform.localScale;
     }

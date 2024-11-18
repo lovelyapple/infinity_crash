@@ -22,7 +22,9 @@ public class SkillSpeedRun : SkillBase
     public override void OnSkillFire()
     {
         base.OnSkillFire();
-        GameMainObject.Instance.StartCoroutine(ChangeFov(_targetFov, 2f));
+        const float duration = 2f;
+        GameMainObject.Instance.StartCoroutine(ChangeFov(_targetFov, duration));
+        SoundManager.Instance.RequestAddBGMSpeed(duration);
         _fillImageCorutine = GameMainObject.Instance.StartCoroutine(StartSpeedImage());
     }
     public override void OnSkillpdate()
@@ -37,7 +39,9 @@ public class SkillSpeedRun : SkillBase
     public override void OnSkillFinished()
     {
         base.OnSkillFinished();
-        GameMainObject.Instance.StartCoroutine(ChangeFov(_prevFov, 1f));
+        const float duration = 1f;
+        GameMainObject.Instance.StartCoroutine(ChangeFov(_prevFov, duration));
+        SoundManager.Instance.RequestNormalBGMSpeed(duration);
 
         if(_fillImageCorutine != null)
         {

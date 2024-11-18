@@ -20,7 +20,10 @@ public class UIResultController : MonoBehaviour
     [SerializeField] TextMeshProUGUI FinalScoreDiscriptionLabel;
     [SerializeField] GameObject GotoTitleObj;
     [SerializeField] TextMeshProUGUI BonustTimeCountLabel;
+    [SerializeField] AudioSource CountSe;
+    [SerializeField] AudioSource CountStopSe;
 
+    [SerializeField] AudioSource FinalResultPunchSe;
     private readonly Dictionary<ResultType, (string, string)> ResultDisplayDict = new Dictionary<ResultType, (string, string)>
     {
         {ResultType.Newbie , ("Newbie ","Getting started!")},
@@ -37,6 +40,7 @@ public class UIResultController : MonoBehaviour
     {
         TappedSkip = false;
         var scoreInfos = ApplicationPressureManager.Instance.ScoreInfos.OrderBy(x => x.ScoreType).ToList();
+        SoundManager.Instance.PlayResultBGM();
 
         if(_coroutine != null)
         {
@@ -64,13 +68,14 @@ public class UIResultController : MonoBehaviour
     }
     IEnumerator IESetScores(List<ScoreInfo> scoreInfos)
     {
-        ScoreLabels.ForEach(x => { x.BeforeSet(); x.SetScore(0); });
-        FinalScoreLabel.BeforeSet();
+        ScoreLabels.ForEach(x => { x.SetScore(0); });
         FinalScoreLabel.SetScore(0);
         FinalScoreTitleLabel.gameObject.SetActive(false);
         FinalScoreDiscriptionLabel.gameObject.SetActive(false);
         GotoTitleObj.SetActive(false);
         BonustTimeCountLabel.text = $"{GameModel.Instance.TimeAddedCount} x 10s";
+
+        CountSe.Play();
         foreach (var scoreinfo in scoreInfos)
         {
             var label = ScoreLabels.FirstOrDefault(x => x.ScoreType == scoreinfo.ScoreType);
@@ -86,6 +91,8 @@ public class UIResultController : MonoBehaviour
 
                 yield return null;
             }
+
+            CountStopSe.Play();
         }
 
         TappedSkip = false;
@@ -102,8 +109,10 @@ public class UIResultController : MonoBehaviour
 
             yield return null;
         }
-
+        CountStopSe.Play();
+        CountSe.Stop();
         yield return new WaitForSeconds(0.5f);
+        FinalResultPunchSe.Play();
         StartCoroutine(Shake(0.2f, 50f));
 
         ResultType resultType = ResultType.Newbie;
@@ -130,7 +139,6 @@ public class UIResultController : MonoBehaviour
     IEnumerator<bool> SetScore(UIResultScore scoreLabels, long score)
     {
         var elapsedTime = 0f;
-        scoreLabels.BeforeSet();
 
         while (elapsedTime < ScoreSinglePerformTime || TappedSkip)
         {
@@ -172,6 +180,7 @@ public class UIResultController : MonoBehaviour
     }
     public void OnClickTitle()
     {
+        SoundManager.Instance.PlayInGameBGM();
         GameModel.Instance.GotoTitle();
     }
 }

@@ -201,9 +201,10 @@ public static class CollisionUtility
         // gizmo3 = hit2TargetPos;
         return hit1MoveResult + hit2MoveResult;
     }
-    public static Vector3 FallCheck(Vector3 move, Vector3 curPos, float half_size, float foot_silde_degree, out float curFootDegree, out GroundTouchState groundTouchState) 
+    public static Vector3 FallCheck(Vector3 move, Vector3 curPos, float half_size, float foot_silde_degree, out float curFootDegree, out GroundTouchState groundTouchState, out string groundTag) 
     {
         curFootDegree = 0;
+        groundTag = "";
         const float RAY_BACK_DISTANCE = 0.01f;
         const float FLOAT_AROUND = 0.0001f;
         const float MAX_CHECK_DISTANCE = 10f;
@@ -219,6 +220,7 @@ public static class CollisionUtility
             moveDistance0 = Mathf.Max(0, hits[0].distance - RAY_BACK_DISTANCE - FLOAT_AROUND);
             // gizmo1 = curPos + moveDir0 * moveDistance0;
             groundTouchState = GroundTouchState.Stationary;
+            groundTag = hits[0].transform.gameObject.tag;
             return moveDir0 * moveDistance0;
         }
         else if (hits.Count == 2)
@@ -305,6 +307,7 @@ public static class CollisionUtility
             return move;
         }
 
+        groundTag = hit0.transform.gameObject.tag;
         var hitDistance0 = hit0.distance - RAY_BACK_DISTANCE - FLOAT_AROUND;
         var remaingDistance0 = moveDistance0 - hitDistance0;
 

@@ -32,19 +32,27 @@ public class GameMainObject : MonoSingletoneBase<GameMainObject>
         var hudController = GameHUDController.Instance;
         hudController.OnCountDownStart();
         Cursor.lockState = CursorLockMode.Locked;
+        SoundManager.Instance.PauseBGM(true);
 
         var countDown = 3f;
+        var prevTest = hudController.CountDownController.CountDownLabel.text;
 
-        while(countDown > 0)
+        while (countDown > 0)
         {
             countDown -= Time.deltaTime;
             hudController.CountDownController.CountDownLabel.text = ((int)(countDown + 1)).ToString();
+
+            if(prevTest != hudController.CountDownController.CountDownLabel.text)
+            {
+                
+            }
 
             yield return null;
         }
 
         GameModel.Instance.StartGame();
         _startGameCoroutine = null;
+        SoundManager.Instance.PauseBGM(false);
     }
     public void DoFOn()
     {

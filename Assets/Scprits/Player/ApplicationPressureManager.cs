@@ -155,6 +155,7 @@ public class ApplicationPressureManager : MonoSingletoneBase<ApplicationPressure
 
         var crasher = GameHUDController.Instance.UIApplicationCrashingControllers.FirstOrDefault(x => x.ApplicationType == applicationType);
         crasher.OnStartCrashing();
+        SoundManager.Instance.PlayOneShot(OneShotSeName.App_Crashing);
     }
     public void OnApplicationDestory(ApplicationType applicationType)
     {
@@ -162,10 +163,11 @@ public class ApplicationPressureManager : MonoSingletoneBase<ApplicationPressure
         var tracker = GameHUDController.Instance.UIApplicationTrackings.FirstOrDefault(x => x.ApplicationType == applicationType);
 
         tracker.Clear();
+        SoundManager.Instance.PlayOneShot(OneShotSeName.App_Recover);
 
         if (setting != null)
         {
-            setting.Pressure = Mathf.Max(0, setting.Pressure- PressureDecreaseOnDestory);
+            setting.Pressure = Mathf.Max(0, setting.Pressure - PressureDecreaseOnDestory);
 
             if(setting.Pressure < PressureCrashing)
             {

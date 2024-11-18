@@ -32,5 +32,6 @@ public class UITitleController : MonoBehaviour
     public void OnClickStart()
     {
         GameMainObject.Instance.RequestStartGame();
+        SoundManager.Instance.PlayOneShot(OneShotSeName.Gmae_Start);
     }
 }
