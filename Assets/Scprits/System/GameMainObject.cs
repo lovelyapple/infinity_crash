@@ -5,6 +5,7 @@ using UnityEngine.Rendering.PostProcessing;
 
 public class GameMainObject : MonoSingletoneBase<GameMainObject>
 {
+    public static bool IsPausing;
     [SerializeField] private PostProcessVolume PostProcessVolume;
     private DepthOfField _depthOfField;
     public DepthOfField DepthOfField { get
@@ -18,6 +19,14 @@ public class GameMainObject : MonoSingletoneBase<GameMainObject>
     }
     public GameCharaConttrollerNew GameCharaController;
     Coroutine _startGameCoroutine;
+    public void Update()
+    {
+        if(Input.GetKeyDown(KeyCode.Escape))
+        {
+            UIPauseController.Instance.gameObject.SetActive(true);
+            IsPausing = true;
+        }
+    }
     public void RequestStartGame()
     {
         if(_startGameCoroutine != null)
@@ -36,6 +45,7 @@ public class GameMainObject : MonoSingletoneBase<GameMainObject>
 
         var countDown = 3f;
         var prevTest = hudController.CountDownController.CountDownLabel.text;
+        GameCharaConttrollerNew.CanRotate = true;
 
         while (countDown > 0)
         {

@@ -29,6 +29,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
     public bool AutoJump = false;
     public bool IsJumped = false;
     public bool CanMove = false;
+    public static bool CanRotate = false;
     void Awake()
     {
         _collider = GetComponent<SphereCollider>();
@@ -49,6 +50,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
     {
         Cursor.lockState = CursorLockMode.Locked;
         CanMove = true;
+        CanRotate = true;
     }
     private void OnGameFinished()
     {
@@ -60,11 +62,13 @@ public class GameCharaConttrollerNew : MonoBehaviour
             skill.OnSkillFinished();
         }
         CanMove = false;
+        CanRotate = false;
     }
     private void OnGotoTitle()
     {
         Cursor.lockState = CursorLockMode.None;
         CanMove = false;
+        CanRotate = false;
     }
     public Vector3Int InputtingVector;
     public Vector3 InputMoveSpeedLocal;
@@ -80,21 +84,24 @@ public class GameCharaConttrollerNew : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        // マウスのX軸とY軸の入力を取得
-        var mouseSensitivity = CurGameSettings.CurCharacterSettings.MouseSensitivity;
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
-
-        // if (mouseX != 0 || mouseY != 0)
+        if (CanRotate)
         {
-            // 縦方向（Y軸）の回転を制限
-            xRotation -= mouseY;
-            xRotation = Mathf.Clamp(xRotation, -90f, 90f);  // 上下の視点回転を90度までに制限
+            // マウスのX軸とY軸の入力を取得
+            var mouseSensitivity = CurGameSettings.CurCharacterSettings.MouseSensitivity;
+            float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
+            float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
 
-            // カメラの回転を上下方向（X軸）に適用
-            CameraTransform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
-            // プレイヤーの体の回転を左右方向（Y軸）に適用
-            transform.Rotate(Vector3.up * mouseX);
+            // if (mouseX != 0 || mouseY != 0)
+            {
+                // 縦方向（Y軸）の回転を制限
+                xRotation -= mouseY;
+                xRotation = Mathf.Clamp(xRotation, -90f, 90f);  // 上下の視点回転を90度までに制限
+
+                // カメラの回転を上下方向（X軸）に適用
+                CameraTransform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+                // プレイヤーの体の回転を左右方向（Y軸）に適用
+                transform.Rotate(Vector3.up * mouseX);
+            }
         }
 
         if(!CanMove)

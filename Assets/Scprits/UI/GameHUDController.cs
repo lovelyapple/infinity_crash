@@ -20,7 +20,8 @@ public class GameHUDController : MonoBehaviour
     public UICountDownController CountDownController;
     public GameObject InGameHUDObj;
     public UIResultController ResultController;
-    
+    public UIPauseController UIPauseController;
+
     void Awake()
     {
         Instance = this;
@@ -28,6 +29,7 @@ public class GameHUDController : MonoBehaviour
         GameModel.Instance.OnGotoTitle += OnGotoTitle;
         GameModel.Instance.OnStartGame += OnGameStart;
         GameModel.Instance.OnFinished += OnGameFinished;
+        UIPauseController.Instance = UIPauseController;
     }
     void OnDestory()
     {

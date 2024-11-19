@@ -62,6 +62,8 @@ public class UIApplicationTrackingController : MonoBehaviour
         col.a = cosV;
         FillImage.color = col;
         FillImage.fillAmount = flashSpeedRate;
+
+        transform.localScale = flashSpeedRate > 0.7 ? Vector3.one * 2 : Vector3.one;// どうだろう、これで足りる？ 
     }
     public void FixedUpdate()
     {
