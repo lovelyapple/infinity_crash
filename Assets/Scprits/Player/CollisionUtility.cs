@@ -10,6 +10,7 @@ public enum GroundTouchState
 }
 public static class CollisionUtility
 {
+    public const float MoveSlideFriction = 0.95f;
     public static Vector3 MoveCheck(Vector3 move, Vector3 curPos, float half_size)
     {
         const float RAY_BACK_DISTANCE = 0.01f;
@@ -145,7 +146,7 @@ public static class CollisionUtility
             return hit1MoveResult;
         }
 
-
+        remaingDistance1 *= MoveSlideFriction;
         hit1MoveResult = moveDir1 * hitDistance1;
         hit1TargetPos = curPos + hit0MoveResult + hit1MoveResult;
         // gizmo2 = hit1TargetPos;
@@ -193,6 +194,7 @@ public static class CollisionUtility
             return hit2MoveResult;
         }
 
+        remaingDistance2 *= MoveSlideFriction;
         //3点タッチしてあれば、もう計算しない
 
         hit2MoveResult = moveDir2 * hitDistance2;

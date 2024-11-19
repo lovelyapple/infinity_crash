@@ -70,6 +70,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
     public Vector3 InputMoveSpeedLocal;
     public Vector3 InputMoveSpeedWorld;
     public float REVERSE_INPUT_FRICTION = 0.98f;
+    public float REVERSE_INPUT_AIR_FRICTION = 0.98f;
     public float MEAN_INPUT_POWER = 0.00001f;
     public float GROUND_TOUCH_SE_PLAY_CONDITION_INTERVAL = 1f;
     public GroundTouchState CurrentGroundTouchState;
@@ -106,6 +107,9 @@ public class GameCharaConttrollerNew : MonoBehaviour
         var inputForce = CurGameSettings.CurCharacterSettings.InputForceVelocity * Time.deltaTime;
         var maxInputSpeedThisFrame = CurGameSettings.CurCharacterSettings.MaxSpeedNormal * Time.deltaTime;
         var maxBuddedSpeedThisFrame = CurGameSettings.CurCharacterSettings.MaxSpeedBuffed * Time.deltaTime;
+
+        var friction = CurrentGroundTouchState != GroundTouchState.Floating ? REVERSE_INPUT_FRICTION : REVERSE_INPUT_AIR_FRICTION;
+
 
 
         if (Input.GetKey(KeyCode.W))
@@ -182,7 +186,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
                 {
                     if (InputMoveSpeedLocal.z < 0)
                     {
-                        InputMoveSpeedLocal.z *= REVERSE_INPUT_FRICTION;
+                        InputMoveSpeedLocal.z *= friction;
 
                         if (InputMoveSpeedLocal.z > -MEAN_INPUT_POWER)
                         {
@@ -196,7 +200,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
                 {
                     if (InputMoveSpeedLocal.z > 0)
                     {
-                        InputMoveSpeedLocal.z *= REVERSE_INPUT_FRICTION;
+                        InputMoveSpeedLocal.z *= friction;
 
                         if (InputMoveSpeedLocal.z < MEAN_INPUT_POWER)
                         {
@@ -209,7 +213,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
             }
             else
             {
-                InputMoveSpeedLocal.z *= REVERSE_INPUT_FRICTION;
+                InputMoveSpeedLocal.z *= friction;
 
                 if (InputMoveSpeedLocal.z * InputMoveSpeedLocal.z < MEAN_INPUT_POWER * MEAN_INPUT_POWER)
                 {
@@ -223,7 +227,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
                 {
                     if (InputMoveSpeedLocal.x < 0)
                     {
-                        InputMoveSpeedLocal.x *= REVERSE_INPUT_FRICTION;
+                        InputMoveSpeedLocal.x *= friction;
 
                         if (InputMoveSpeedLocal.x > -MEAN_INPUT_POWER)
                         {
@@ -237,7 +241,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
                 {
                     if (InputMoveSpeedLocal.x > 0)
                     {
-                        InputMoveSpeedLocal.x *= REVERSE_INPUT_FRICTION;
+                        InputMoveSpeedLocal.x *= friction;
 
                         if (InputMoveSpeedLocal.x < MEAN_INPUT_POWER)
                         {
@@ -250,7 +254,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
             }
             else
             {
-                InputMoveSpeedLocal.x *= REVERSE_INPUT_FRICTION;
+                InputMoveSpeedLocal.x *= friction;
 
                 if (InputMoveSpeedLocal.x * InputMoveSpeedLocal.x < MEAN_INPUT_POWER * MEAN_INPUT_POWER)
                 {
@@ -262,7 +266,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
         {
             if (InputMoveSpeedLocal.x != 0 || InputMoveSpeedLocal.z != 0)
             {
-                InputMoveSpeedLocal *= REVERSE_INPUT_FRICTION;
+                InputMoveSpeedLocal *= friction;
 
                 if(InputMoveSpeedLocal.sqrMagnitude <= MEAN_INPUT_POWER * MEAN_INPUT_POWER)
                 {
@@ -292,7 +296,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
         {
             if (InputMoveSpeedWorld.x != 0 || InputMoveSpeedLocal.z != 0)
             {
-                InputMoveSpeedWorld *= REVERSE_INPUT_FRICTION;
+                InputMoveSpeedWorld *= friction;
 
                 if (InputMoveSpeedWorld.sqrMagnitude <= MEAN_INPUT_POWER * MEAN_INPUT_POWER)
                 {

@@ -12,7 +12,6 @@ public class GameSettings : MonoBehaviour
     public class CharacterSettings
     {
         public float InputForceVelocity = 1f;
-        public float InputSpeed = 3f;
         public float MaxSpeedNormal = 10f;
         public float MaxSpeedBuffed = 12f;
 
