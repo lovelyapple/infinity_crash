@@ -411,6 +411,7 @@ public class GameCharaConttroller : MonoBehaviour
             var FieldAppIcon = collider.gameObject.GetComponent<FieldAppIcon>();
 
             FieldAppIcon.RequestTouch();
+            ResourceManager.Instance.TurnOnEffect("Fx_up");
         }
         else if (collider.gameObject.tag == "JumpBoard")
         {
@@ -420,6 +421,7 @@ public class GameCharaConttroller : MonoBehaviour
         else if (collider.gameObject.tag == "FieldSkill")
         {
             var skillObj = collider.gameObject.GetComponent<FieldSkill>();
+            ResourceManager.Instance.TurnOnEffect("Fx_up");
             skillObj.RequestTouch();
 
             var settingData = GameSkillChooser.Instance.GetOneSkillData();

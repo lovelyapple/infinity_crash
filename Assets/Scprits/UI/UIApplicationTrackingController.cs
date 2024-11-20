@@ -16,20 +16,24 @@ public class UIApplicationTrackingController : MonoBehaviour
     const float pid = 3.14f * 2f;
     private PressureInfo _pressureInfo;
     public float flashSpeedRate;
+    public AudioSource audioSource;
     public void Start()
     {
         fovInRadians = (90 - Camera.main.fieldOfView / 2f) * Mathf.Deg2Rad;
         halfWidth = TargetRect.rect.width / 2f;
+        audioSource.Stop();
     }
     public void Init(FieldApplicationSpawner spawner, PressureInfo pressureInfo)
     {
         HoldingSpawner = spawner;
         _pressureInfo = pressureInfo;
         gameObject.SetActive(true);
+        audioSource.Stop();
     }
     public void Clear()
     {
         HoldingSpawner = null;
+        audioSource.Stop();
     }
     public void Update()
     {
@@ -64,6 +68,11 @@ public class UIApplicationTrackingController : MonoBehaviour
         FillImage.fillAmount = flashSpeedRate;
 
         transform.localScale = flashSpeedRate > 0.7 ? Vector3.one * 2 : Vector3.one;// どうだろう、これで足りる？ 
+
+        if(flashSpeedRate > 0.7 && !audioSource.isPlaying)
+        {
+            audioSource.Play();
+        }
     }
     public void FixedUpdate()
     {

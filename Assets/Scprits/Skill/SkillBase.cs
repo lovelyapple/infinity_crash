@@ -103,7 +103,7 @@ public class SkillBase
 
         if (!string.IsNullOrEmpty(_settingData.ScreenEffectName) && _settingData.TimeType != SkillTimeType.OneShot)
         {
-            ResourceManager.Instance.TurneOffEffect(_settingData.ScreenEffectName);
+            ResourceManager.Instance.TurnOffEffect(_settingData.ScreenEffectName);
         }
 
         _player.OnRemoveSkill(this);

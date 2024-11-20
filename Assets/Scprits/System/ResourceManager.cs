@@ -19,7 +19,7 @@ public class ResourceManager : MonoSingletoneBase<ResourceManager>
             }
         }
     }
-    public void TurneOffEffect(string effectName)
+    public void TurnOffEffect(string effectName)
     {
         foreach (var f in ScreenEffects)
         {
