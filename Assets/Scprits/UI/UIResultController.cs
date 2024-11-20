@@ -8,11 +8,11 @@ public class UIResultController : MonoBehaviour
 {
     public enum ResultType
     {
-        Newbie = 40,
-        Normal = 80,
-        Leader = 120,
-        Cheaf = 160,
-        SpecialList = 220,
+        Newbie = 30,
+        Normal = 60,
+        Leader = 80,
+        Cheaf = 120,
+        SpecialList = 160,
     }
     [SerializeField] List<UIResultScore> ScoreLabels;
     [SerializeField] UIResultScore FinalScoreLabel;

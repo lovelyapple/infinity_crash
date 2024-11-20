@@ -22,6 +22,8 @@ public class GameHUDController : MonoBehaviour
     public UIResultController ResultController;
     public UIPauseController UIPauseController;
 
+    public TextMeshProUGUI DebugText;
+
     void Awake()
     {
         Instance = this;

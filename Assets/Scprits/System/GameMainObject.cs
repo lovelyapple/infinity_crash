@@ -19,6 +19,10 @@ public class GameMainObject : MonoSingletoneBase<GameMainObject>
     }
     public GameCharaConttrollerNew GameCharaController;
     Coroutine _startGameCoroutine;
+    public void Start()
+    {
+        Application.targetFrameRate = 60;
+    }
     public void Update()
     {
         if(Input.GetKeyDown(KeyCode.Escape))

@@ -81,9 +81,28 @@ public class GameCharaConttrollerNew : MonoBehaviour
     public float DirectDownSpeed;
     public float FootGroundAngle;
     public float FloatingTime;
+
+
+    private int frameCount = 0;
+    private float elapsedTime = 0.0f;
+    private float displayInterval = 0.5f; // FPSを更新する間隔（秒）
+    int fps = 0;
     // Update is called once per frame
     void Update()
     {
+
+        frameCount++;
+        elapsedTime += Time.deltaTime;
+
+
+        if (elapsedTime >= displayInterval)
+        {
+            fps = (int)(frameCount * (1f / elapsedTime));
+
+            frameCount = 0;
+            elapsedTime = 0.0f;
+        }
+
         if (CanRotate)
         {
             // マウスのX軸とY軸の入力を取得
@@ -116,6 +135,8 @@ public class GameCharaConttrollerNew : MonoBehaviour
         var maxBuddedSpeedThisFrame = CurGameSettings.CurCharacterSettings.MaxSpeedBuffed * Time.deltaTime;
 
         var friction = CurrentGroundTouchState != GroundTouchState.Floating ? REVERSE_INPUT_FRICTION : REVERSE_INPUT_AIR_FRICTION;
+
+        GameHUDController.Instance.DebugText.text = $"{CurGameSettings.CurCharacterSettings.MaxSpeedNormal} - {fps} - {maxInputSpeedThisFrame.ToString("0.00000000")}";
 
 
 
