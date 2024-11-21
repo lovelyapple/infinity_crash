@@ -434,6 +434,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
     {
         if (collider.gameObject.tag == "DangerApplyIcon")
         {
+            ResourceManager.Instance.TurnOnEffect("Fx_up");
             var FieldAppIcon = collider.gameObject.GetComponent<FieldAppIcon>();
 
             FieldAppIcon.RequestTouch();
@@ -446,6 +447,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
         }
         else if (collider.gameObject.tag == "FieldSkill")
         {
+            ResourceManager.Instance.TurnOnEffect("Fx_up");
             SoundManager.Instance.PlayOneShot(OneShotSeName.Skill_Get);
             var skillObj = collider.gameObject.GetComponent<FieldSkill>();
             skillObj.RequestTouch();
