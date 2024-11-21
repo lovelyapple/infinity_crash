@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class GameCharaConttrollerNew : MonoBehaviour
 {
+    [SerializeField] Animator CameraJumpShakeAnimator;
     public GameSettings CurGameSettings;
     public Camera mainCamera;
     public float maxDistance = 500f; // レイキャストの最大距離
@@ -72,7 +73,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
     public float REVERSE_INPUT_FRICTION = 0.98f;
     public float REVERSE_INPUT_AIR_FRICTION = 0.98f;
     public float MEAN_INPUT_POWER = 0.00001f;
-    public float GROUND_TOUCH_SE_PLAY_CONDITION_INTERVAL = 1f;
+    public float GROUND_TOUCH_SE_PLAY_CONDITION_INTERVAL = 0.18f;
     public GroundTouchState CurrentGroundTouchState;
     public float DirectDownSpeed;
     public float FootGroundAngle;
@@ -185,6 +186,8 @@ public class GameCharaConttrollerNew : MonoBehaviour
             if(FloatingTime > GROUND_TOUCH_SE_PLAY_CONDITION_INTERVAL && !string.IsNullOrEmpty(groundTag) && groundTag != "WaterField")
             {
                 SoundManager.Instance.PlayOneShot(OneShotSeName.Fall_Touching_Ground);
+
+                CameraJumpShakeAnimator.SetTrigger("touch_ground");
             }
         }
 
