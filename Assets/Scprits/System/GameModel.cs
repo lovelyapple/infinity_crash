@@ -26,6 +26,25 @@ public class GameModel
         Game,
         Result,
     }
+    public enum GameResultType
+    {
+        Timeout,
+        AppCrashed,
+    }
+    public class GameResult
+    {
+        public readonly GameResultType ResultType;
+        public readonly ApplicationType CrashedAppType;
+        public GameResult()
+        {
+            ResultType = GameResultType.Timeout;
+        }
+        public GameResult(ApplicationType applicationType)
+        {
+            ResultType = GameResultType.AppCrashed;
+            CrashedAppType = applicationType;
+        }
+    }
     private GamgePhase _currentGmaePhase = GamgePhase.Title;
     public Action OnGotoTitle;
     public Action OnStartGame;
@@ -33,11 +52,13 @@ public class GameModel
     const float DefaultGameTime = 60 * 3f;
     public float TimeLeft = DefaultGameTime;
     public int TimeAddedCount = 0;
+    public GameResult CurrentGameResult;
     public void GotoTitle()
     {
         _currentGmaePhase = GamgePhase.Title;
         TimeLeft = DefaultGameTime;
         TimeAddedCount = 0;
+        CurrentGameResult = null;
         GameMainObject.Instance.DoFOn();
         if (OnGotoTitle != null)
             OnGotoTitle.Invoke();
@@ -47,12 +68,14 @@ public class GameModel
         _currentGmaePhase = GamgePhase.Game;
         TimeLeft = DefaultGameTime;
         TimeAddedCount = 0;
+        CurrentGameResult = null;
         GameMainObject.Instance.DoFOff();
         if (OnStartGame != null)
             OnStartGame.Invoke();
     }
-    public void EndGame()
+    public void EndGame(GameResult result)
     {
+        CurrentGameResult = result;
         _currentGmaePhase = GamgePhase.Result;
         FieldObjectListController.Instance.ResetAllApplicationSpawner();
         GameMainObject.Instance.DoFOn();
@@ -70,7 +93,7 @@ public class GameModel
 
         if(TimeLeft <= 0)
         {
-            EndGame();
+            EndGame(new GameResult());
             TimeLeft = 0;
         }
 

@@ -13,7 +13,7 @@ public enum ScoreType
 }
 public enum ApplicationType
 {
-    Unity,
+    Unity = 0,
     CodeTool,
     Office,
     Blender,
@@ -131,7 +131,7 @@ public class ApplicationPressureManager : MonoSingletoneBase<ApplicationPressure
             if (pressure.Pressure > PressureMax)
             {
                 pressure.Pressure = PressureMax;
-                GameModel.Instance.EndGame();
+                GameModel.Instance.EndGame(new GameModel.GameResult(pressure.ApllicationType));
             }
 
             if(prePressure < PressureCrashing && pressure.Pressure > PressureCrashing)

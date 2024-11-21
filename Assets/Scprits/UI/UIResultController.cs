@@ -10,9 +10,9 @@ public class UIResultController : MonoBehaviour
     {
         Newbie = 30,
         Normal = 60,
-        Leader = 80,
-        Cheaf = 120,
-        SpecialList = 160,
+        Leader = 90,
+        Cheaf = 135,
+        SpecialList = 180,
     }
     [SerializeField] List<UIResultScore> ScoreLabels;
     [SerializeField] UIResultScore FinalScoreLabel;
@@ -22,8 +22,8 @@ public class UIResultController : MonoBehaviour
     [SerializeField] TextMeshProUGUI BonustTimeCountLabel;
     [SerializeField] AudioSource CountSe;
     [SerializeField] AudioSource CountStopSe;
-
     [SerializeField] AudioSource FinalResultPunchSe;
+    [SerializeField] UIResultCrashedApp ResultCrashedApp;
     private readonly Dictionary<ResultType, (string, string)> ResultDisplayDict = new Dictionary<ResultType, (string, string)>
     {
         {ResultType.Newbie , ("Newbie ","Getting started!")},
@@ -35,12 +35,21 @@ public class UIResultController : MonoBehaviour
     public float ScoreSinglePerformTime = 1.5f;
     public bool TappedSkip = false;
     Coroutine _coroutine;
-
     public void SetupScore()
     {
         TappedSkip = false;
         var scoreInfos = ApplicationPressureManager.Instance.ScoreInfos.OrderBy(x => x.ScoreType).ToList();
         SoundManager.Instance.PlayResultBGM();
+        var result = GameModel.Instance.CurrentGameResult;
+
+        if(result.ResultType != GameModel.GameResultType.Timeout)
+        {
+            ResultCrashedApp.Setup(result.CrashedAppType);
+        }
+        else
+        {
+            ResultCrashedApp.gameObject.SetActive(false);
+        }
 
         if(_coroutine != null)
         {
