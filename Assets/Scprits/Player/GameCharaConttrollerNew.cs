@@ -5,6 +5,10 @@ using UnityEngine;
 public class GameCharaConttrollerNew : MonoBehaviour
 {
     [SerializeField] Animator CameraJumpShakeAnimator;
+    private const int MAX_WATER_JUMP_RETURN_CHANCE = 2;
+    private int _waterJumpReturnChanceLeft;
+    [SerializeField] AnimatorAutoTurnOff TransportAuto;
+    private FieldSkillSpawner _lastSkillSpanwer;
     public GameSettings CurGameSettings;
     public Camera mainCamera;
     public float maxDistance = 500f; // レイキャストの最大距離
@@ -36,6 +40,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
         GameModel.Instance.OnStartGame += OnGameStart;
         GameModel.Instance.OnFinished += OnGameFinished;
         GameModel.Instance.OnGotoTitle += OnGotoTitle;
+        TransportAuto.OnFinsihed = () => { CanMove = true; };
     }
     void OnDestory()
     {
@@ -48,6 +53,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         CanMove = true;
         CanRotate = true;
+        _waterJumpReturnChanceLeft = MAX_WATER_JUMP_RETURN_CHANCE;
     }
     private void OnGameFinished()
     {
@@ -188,6 +194,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
                 SoundManager.Instance.PlayOneShot(OneShotSeName.Fall_Touching_Ground);
 
                 CameraJumpShakeAnimator.SetTrigger("touch_ground");
+                _waterJumpReturnChanceLeft = MAX_WATER_JUMP_RETURN_CHANCE;
             }
         }
 
@@ -421,12 +428,32 @@ public class GameCharaConttrollerNew : MonoBehaviour
     }
     public void OnCollisionEnter(Collision col)
     {
-        if(col.gameObject.tag == "WaterField")
+        if (col.gameObject.tag == "WaterField")
         {
-            Jump(15);
+            if (_waterJumpReturnChanceLeft > 0)
+            {
+                Jump(15);
 
-            GameModel.Instance.DecreaseTime();
-            ResourceManager.Instance.TurnOnEffect("Fx_WaterJump");
+                GameModel.Instance.DecreaseTime();
+                ResourceManager.Instance.TurnOnEffect("Fx_WaterJump");
+                _waterJumpReturnChanceLeft--;
+            }
+            else
+            {
+                GameModel.Instance.DecreaseTime();
+                ResourceManager.Instance.TurnOnEffect("Fx_WaterJump");
+                _waterJumpReturnChanceLeft = MAX_WATER_JUMP_RETURN_CHANCE;
+                
+                if(_lastSkillSpanwer == null)
+                {
+                    _lastSkillSpanwer = FieldObjectListController.Instance.FieldSkillSpawners.OrderBy(x => Vector3.Distance(transform.position, x.transform.position)).First();
+                }
+
+                _lastSkillSpanwer.HoldingObject.RequestTouch();
+                transform.position = _lastSkillSpanwer.HoldingObject.transform.position;
+                ResourceManager.Instance.TurnOnEffect("Fx_transport");
+                CanMove = false;
+            }
         }
     }
     public void OnTriggerEnter(Collider collider)
@@ -535,6 +562,6 @@ public class GameCharaConttrollerNew : MonoBehaviour
     private void Jump(float jumpForce)
     {
         IsJumped = true;
-        DirectDownSpeed -= jumpForce;
+        DirectDownSpeed = -jumpForce;
     }
 }

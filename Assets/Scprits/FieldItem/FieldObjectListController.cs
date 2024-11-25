@@ -29,4 +29,6 @@ public class FieldObjectListController : MonoBehaviour
         FieldApplicationSpawners.ForEach(x => x.OnRequestTurnOff());
     }
 
+    public List<FieldSkillSpawner> FieldSkillSpawners;
+
 }

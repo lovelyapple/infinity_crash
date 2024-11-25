@@ -30,7 +30,7 @@ public class UIResultController : MonoBehaviour
         {ResultType.Normal, ("Normal", " Nice performance, keep it up!")},
         {ResultType.Leader, ("Leader", "Impressive !!")},
         {ResultType.Cheaf, ("Cheaf", "Great job, you're a master!")},
-        {ResultType.SpecialList, ("Specialist", "Outstanding! You're truly elite!")},
+        {ResultType.SpecialList, ("Specialist", "Outstanding! You're a truly elite!")},
     };
     public float ScoreSinglePerformTime = 1.5f;
     public bool TappedSkip = false;
