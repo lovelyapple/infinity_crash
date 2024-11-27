@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class UITitleController : MonoBehaviour
 {
+    [SerializeField] private GameObject StartButton;
+    [SerializeField] private UITutorialOneImage FirstRuleTutorial;
+    [SerializeField] private UITutorialOneImage LastTutorialOneImage;
+    private const string HasShowDescriptionPrefsKey = "DescriptionShown";
     private void Awake()
     {
         GameModel.Instance.OnStartGame += OnGameStart;
@@ -11,7 +15,7 @@ public class UITitleController : MonoBehaviour
         GameModel.Instance.OnGotoTitle += OnGotoTitle;
         GameMainObject.Instance.DoFOn();
     }
-    private void OnDestory()
+    private void OnDestroy()
     {
         GameModel.Instance.OnStartGame -= OnGameStart;
         GameModel.Instance.OnFinished -= OnGameFinished;
@@ -31,7 +35,33 @@ public class UITitleController : MonoBehaviour
     }
     public void OnClickStart()
     {
-        GameMainObject.Instance.RequestStartGame();
-        SoundManager.Instance.PlayOneShot(OneShotSeName.Gmae_Start);
+        var shown = PlayerPrefs.GetInt(HasShowDescriptionPrefsKey, 0) != 0;
+
+        if (!shown)
+        {
+            FirstRuleTutorial.gameObject.SetActive(true);
+            StartButton.gameObject.SetActive(false);
+            PlayerPrefs.SetInt(HasShowDescriptionPrefsKey, 1);
+            LastTutorialOneImage.OnEnd = () =>
+            {
+                StartButton.gameObject.SetActive(true);
+                GameMainObject.Instance.RequestStartGame();
+                SoundManager.Instance.PlayOneShot(OneShotSeName.Gmae_Start);
+            };
+        }
+        else
+        {
+            GameMainObject.Instance.RequestStartGame();
+            SoundManager.Instance.PlayOneShot(OneShotSeName.Gmae_Start);
+        }
+    }
+    public void OnClickTutorial()
+    {
+        FirstRuleTutorial.gameObject.SetActive(true);
+        StartButton.gameObject.SetActive(false);
+        LastTutorialOneImage.OnEnd = () =>
+        {
+            StartButton.gameObject.SetActive(true);
+        };
     }
 }

@@ -3,8 +3,9 @@
   <component name="ChangeListManager">
     <list default="true" id="3ab074e0-d06f-4f6d-a9ab-a395a2338e51" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.infinity_crash/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.infinity_crash/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/PlayerControllerTest/RayTest.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/PlayerControllerTest/RayTest.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/raytests.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/raytests.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/NewGame.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/NewGame.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scprits/UI/UITitleController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scprits/UI/UITitleController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -14,6 +15,7 @@
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/f7237cf7abef49bfbb552d7eb076e422174200/ff/5dcd8948/Object.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/Scprits/FX/ParticleSystemAutoDestory.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Assets/Scprits/UI/UITutorialOneImage.cs" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
@@ -40,6 +42,14 @@
   }
 }</component>
   <component name="RunManager" selected="Attach to Unity Editor.Attach to Unity Editor">
+    <configuration name="Standalone Player" type="RunUnityExe" factoryName="Unity Executable">
+      <option name="EXE_PATH" value="$PROJECT_DIR$/../builds\infinity_crash.exe" />
+      <option name="PROGRAM_PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="C:\projects\builds" />
+      <option name="PASS_PARENT_ENVS" value="1" />
+      <option name="USE_EXTERNAL_CONSOLE" value="0" />
+      <method v="2" />
+    </configuration>
     <configuration name="Start Unity" type="RunUnityExe" factoryName="Unity Executable">
       <option name="EXE_PATH" value="C:\Program Files\Unity\Hub\Editor\2022.3.17f1\Editor\Unity.exe" />
       <option name="PROGRAM_PARAMETERS" value="-projectPath C:\projects\infinity_crash -debugCodeOptimization" />
@@ -66,10 +76,10 @@
       </option>
       <method v="2" />
     </configuration>
-    <configuration name="Attach to Unity Editor" type="UNITY_DEBUG_RUN_CONFIGURATION" factoryName="Unity Debug" show_console_on_std_err="false" show_console_on_std_out="false" port="50000" address="localhost" ignored-value-for-modified-check="26464">
+    <configuration name="Attach to Unity Editor" type="UNITY_DEBUG_RUN_CONFIGURATION" factoryName="Unity Debug" show_console_on_std_err="false" show_console_on_std_out="false" port="50000" address="localhost">
       <option name="allowRunningInParallel" value="false" />
       <option name="listenPortForConnections" value="false" />
-      <option name="pid" value="26464" />
+      <option name="pid" />
       <option name="projectPathOnTarget" />
       <option name="selectedOptions">
         <list />
@@ -90,6 +100,7 @@
       <workItem from="1730432497806" duration="12340000" />
       <workItem from="1731662434821" duration="2843000" />
       <workItem from="1731666489913" duration="2934000" />
+      <workItem from="1732688665576" duration="2533000" />
     </task>
     <servers />
   </component>
