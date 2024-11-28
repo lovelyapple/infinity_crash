@@ -475,6 +475,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
         {
             ResourceManager.Instance.TurnOnEffect("Fx_up");
             SoundManager.Instance.PlayOneShot(OneShotSeName.Skill_Get);
+            _lastSkillSpanwer = collider.transform.parent.gameObject.GetComponent<FieldSkillSpawner>();
             var skillObj = collider.gameObject.GetComponent<FieldSkill>();
             skillObj.RequestTouch();
 
