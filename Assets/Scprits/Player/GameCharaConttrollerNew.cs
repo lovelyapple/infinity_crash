@@ -40,7 +40,6 @@ public class GameCharaConttrollerNew : MonoBehaviour
         GameModel.Instance.OnStartGame += OnGameStart;
         GameModel.Instance.OnFinished += OnGameFinished;
         GameModel.Instance.OnGotoTitle += OnGotoTitle;
-        TransportAuto.OnFinsihed = () => { CanMove = true; };
     }
     void OnDestory()
     {
@@ -449,6 +448,7 @@ public class GameCharaConttrollerNew : MonoBehaviour
                     _lastSkillSpanwer = FieldObjectListController.Instance.FieldSkillSpawners.OrderBy(x => Vector3.Distance(transform.position, x.transform.position)).First();
                 }
 
+                TransportAuto.OnFinsihed = () => { CanMove = true; };
                 _lastSkillSpanwer.HoldingObject.RequestTouch();
                 transform.position = _lastSkillSpanwer.HoldingObject.transform.position;
                 ResourceManager.Instance.TurnOnEffect("Fx_transport");
